@@ -157,7 +157,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
     <ClCompile Include="WowGameObject.cpp" />
+    <ClCompile Include="WowItem.cpp" />
     <ClCompile Include="WowObject.cpp" />
+    <ClCompile Include="WowUnit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\hadesmem\build\vs\imgui\imgui.vcxproj">
@@ -170,8 +172,12 @@
   <ItemGroup>
     <ClInclude Include="memory.hpp" />
     <ClInclude Include="ObjectManager.hpp" />
+    <ClInclude Include="WowContainer.hpp" />
     <ClInclude Include="WowGameObject.hpp" />
+    <ClInclude Include="WowItem.hpp" />
     <ClInclude Include="WowObject.hpp" />
+    <ClInclude Include="WowPlayer.hpp" />
+    <ClInclude Include="WowUnit.hpp" />
     <ClInclude Include="wow_constants.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

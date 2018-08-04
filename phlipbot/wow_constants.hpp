@@ -59,22 +59,24 @@ namespace types
     ALL = 0xFFFFFFFF,
   };
 
-  enum class DynamicFlags : uint32_t
+  namespace DynamicFlags
   {
-    isDeadMobMine = 0x1,
-    tagged        = 0x4,
-  };
+    uint32_t const
+      isDeadMobMine = 0x1,
+      tagged        = 0x4;
+  }
 
-  enum class MovementFlags : uint32_t
+  namespace MovementFlags
   {
-    None      = 0x00000000,
-    Forward   = 0x00000001,
-    Back      = 0x00000002,
-    TurnLeft  = 0x00000010,
-    TurnRight = 0x00000020,
-    Stunned   = 0x00001000,
-    Swimming  = 0x00200000,
-  };
+    uint32_t const
+      None      = 0x00000000,
+      Forward   = 0x00000001,
+      Back      = 0x00000002,
+      TurnLeft  = 0x00000010,
+      TurnRight = 0x00000020,
+      Stunned   = 0x00001000,
+      Swimming  = 0x00200000;
+  }
 
   enum class MovementOpCodes : uint32_t
   {
@@ -168,111 +170,133 @@ namespace types
 
 namespace offsets
 {
-  enum class Functions : uintptr_t
+  namespace Functions
   {
-    LastHardwareAction            = 0x00CF0BC8,
-    AutoLoot                      = 0x004C1FA0,
-    ClickToMove                   = 0x00611130,
-    GetText                       = 0x00703BF0,
-    DoString                      = 0x00704CD0,
-    GetEndscene                   = 0x005A17B6,
-    IsLooting                     = 0x006126B0,
-    GetLootSlots                  = 0x004C2260,
-    OnRightClickObject            = 0x005F8660,
-    OnRightClickUnit              = 0x0060BEA0,
-    SetFacing                     = 0x007C6F30,
-    SendMovementPacket            = 0x00600A30,
-    PerformDefaultAction          = 0x00481F60,
-    CGInputControl__GetActive     = 0x005143E0,
-    CGInputControl__SetControlBit = 0x00515090,
-    ClntObjMgrEnumVisibleObjects  = 0x00468380,
-    ClntObjMgrObjectPtr           = 0x00468460,
-    ClntObjMgrGetActivePlayer     = 0x00468550,
-    ClntObjMgrGetMapId            = 0x00468580,
-    NetClientSend                 = 0x005379A0,
-  };
+    uintptr_t const
+      LastHardwareAction              = 0x00CF0BC8,
+      AutoLoot                        = 0x004C1FA0,
+      ClickToMove                     = 0x00611130,
+      GetText                         = 0x00703BF0,
+      DoString                        = 0x00704CD0,
+      GetEndscene                     = 0x005A17B6,
+      IsLooting                       = 0x006126B0,
+      GetLootSlots                    = 0x004C2260,
+      OnRightClickObject              = 0x005F8660,
+      OnRightClickUnit                = 0x0060BEA0,
+      SetFacing                       = 0x007C6F30,
+      SendMovementPacket              = 0x00600A30,
+      PerformDefaultAction            = 0x00481F60,
+      CGInputControl__GetActive       = 0x005143E0,
+      CGInputControl__SetControlBit   = 0x00515090,
+      ClntObjMgr__EnumVisibleObjects  = 0x00468380,
+      ClntObjMgr__ObjectPtr           = 0x00468460,
+      ClntObjMgr__GetActivePlayer     = 0x00468550,
+      ClntObjMgr__GetMapId            = 0x00468580,
+      DBCache__ItemStats_C__GetRecord = 0x0055BA30,
+      NetClientSend                   = 0x005379A0;
+  }
 
-  enum class Player : uintptr_t
+  namespace Player
   {
-    Class          = 0x00827E81,
-    IsIngame       = 0x00B4B424,
-    IsGhost        = 0x00835A48,
-    Name           = 0x00827D88,
-    TargetGuid     = 0x0074E2D8,
-    IsCasting      = 0x00CECA88,
-    CharacterCount = 0x00B42140,
-  };
+    uintptr_t const
+      Class          = 0x00827E81,
+      IsIngame       = 0x00B4B424,
+      IsGhost        = 0x00835A48,
+      Name           = 0x00827D88,
+      TargetGuid     = 0x0074E2D8,
+      IsCasting      = 0x00CECA88,
+      CharacterCount = 0x00B42140;
+  }
 
-  enum class PlayerOffsets : ptrdiff_t
+  namespace PlayerOffsets
   {
-    IsChannelingDescriptor = 0x240,
-    ComboPoints1           = 0xE68,
-    ComboPoints2           = 0x1029,
-  };
+    ptrdiff_t const
+      IsChannelingDescriptor = 0x240,
+      ComboPoints1           = 0xE68,
+      ComboPoints2           = 0x1029;
+  }
 
-  enum class CharacterScreen : uintptr_t
+  namespace CharacterScreen
   {
-    Offset        = 0x00B42144,
-    NumCharacters = Offset - 0x4,
-    LoginState    = 0x00B41478,
-  };
+    uintptr_t const
+      Offset        = 0x00B42144,
+      NumCharacters = Offset - 0x4,
+      LoginState    = 0x00B41478;
+  }
 
-  enum class CharacterScreenConsts : uint32_t
+  namespace CharacterScreenConsts
   {
-    Size = 0x120,
-  };
+    uint32_t const
+      Size = 0x120;
+  }
 
-  enum class Party : uintptr_t
+  namespace Party
   {
-    leaderGuid = 0x00BC75F8,
-    party1Guid = 0x00BC6F48,
-    party2Guid = 0x00BC6F50,
-    party3Guid = 0x00BC6F58,
-    party4Guid = 0x00BC6F60,
-  };
+    uintptr_t const
+      leaderGuid = 0x00BC75F8,
+      party1Guid = 0x00BC6F48,
+      party2Guid = 0x00BC6F50,
+      party3Guid = 0x00BC6F58,
+      party4Guid = 0x00BC6F60;
+  }
 
-  enum class Data : uintptr_t
+  namespace Data
   {
-    GameVersion   = 0x00837C04,
-    MapId         = 0x0084C498,
-    AntiDc        = 0x00B41D98,
-    LoginState    = 0x00B41478,
-  };
+    uintptr_t const
+      GameVersion          = 0x00837C04,
+      MapId                = 0x0084C498,
+      AntiDc               = 0x00B41D98,
+      LoginState           = 0x00B41478,
+      DBCache__ItemStats_C = 0x00C0E2A0;
+  }
 
-  enum class ObjectManager : uintptr_t
+  namespace ItemStats 
   {
-    Pointer = 0x00B41414,
-  };
+    ptrdiff_t const
+      Name    = 0x8,
+      Quality = 0x1C;
+  }
 
-  enum class ObjectManagerOffsets : ptrdiff_t
+  namespace ObjectManager
   {
-    CurObjGuid       = 0x30,
-    PlayerGuid       = 0xC0,
-    FirstObj         = 0xAC,
-    NextObj          = 0x3C,
-    ObjType          = 0x14,
-    DescriptorOffset = 0x8,
-  };
+    uintptr_t const
+      Pointer = 0x00B41414;
+  }
+
+  namespace ObjectManagerOffsets
+  {
+    ptrdiff_t const
+      CurObjGuid       = 0x30,
+      PlayerGuid       = 0xC0,
+      FirstObj         = 0xAC,
+      NextObj          = 0x3C,
+      ObjType          = 0x14,
+      DescriptorOffset = 0x8;
+  }
 
   enum class Descriptors : ptrdiff_t
   {
     GotLoot                 = 0xB4,
     SummonedByGuid          = 0x30,
     DynamicFlags            = 0x23C,
-    IsChanneling            = 0x240,
+    ChannelingSpellId       = 0x240,
     CreatedByGuid           = 0x38,
     GameObjectCreatedByGuid = 0x18,
     MovementFlags           = 0x9E8,
     Health                  = 0x58,
     MaxHealth               = 0x70,
+    NpcId                   = 0xE74,
     FactionId               = 0x8C,
     Mana                    = 0x5C,
     MaxMana                 = 0x74,
     Rage                    = 0x60,
     TargetGuid              = 0x40,
+    CastingSpellId          = 0xC84,
     CorpseOwnedBy           = 0x18,
     ItemId                  = 0xC,
     ItemStackCount          = 0x38,
+    ItemDurability          = 0xB8,
+    ItemMaxDurability       = 0xBC,
     ContainerTotalSlots     = 0x6C8,
     GameObjPos              = 0x3C,
     UnitPos                 = 0x9B0,

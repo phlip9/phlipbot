@@ -21,8 +21,8 @@ public:
     return *(instance.get());
   }
 
-  //std::unordered_map<types::Guid, WowObject> guid_obj_cache;
-  //std::vector<WowObject> objs;
+  std::unordered_map<types::Guid, WowObject> guid_obj_cache;
+  std::vector<WowObject> objs;
 
   phlipbot::types::Guid GetPlayerGuid();
   //WowObject const& GetObjByGuid(phlipbot::types::Guid const guid);

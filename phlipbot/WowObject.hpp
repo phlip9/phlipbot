@@ -10,12 +10,10 @@ namespace phlipbot
 struct WowObject
 {
 public:
-  inline explicit WowObject(
-    phlipbot::types::Guid const guid_, uintptr_t const base_ptr_,
-    phlipbot::types::ObjectType const obj_type_)
-    : guid{ guid_ }, base_ptr{ base_ptr_ }, obj_type{ obj_type_ }
-  {
-  }
+  inline explicit WowObject(phlipbot::types::Guid const guid_, uintptr_t const base_ptr_)
+    : guid{ guid_ }, base_ptr{ base_ptr_ }
+  { }
+  WowObject(const WowObject &obj) = default;
   virtual ~WowObject() {};
 
   template <typename T>
@@ -23,7 +21,7 @@ public:
   {
     uintptr_t const target =
       base_ptr
-      + static_cast<ptrdiff_t>(phlipbot::offsets::ObjectManagerOffsets::DescriptorOffset)
+      + phlipbot::offsets::ObjectManagerOffsets::DescriptorOffset
       + static_cast<ptrdiff_t>(desc_offset);
 
     return phlipbot::memory::ReadRaw<T>(target);
@@ -35,7 +33,7 @@ public:
   {
     uintptr_t const target =
       base_ptr
-      + static_cast<ptrdiff_t>(phlipbot::offsets::ObjectManagerOffsets::DescriptorOffset)
+      + phlipbot::offsets::ObjectManagerOffsets::DescriptorOffset
       + static_cast<ptrdiff_t>(desc_offset);
 
     phlipbot::memory::WriteRaw<T>(target, t);
@@ -53,8 +51,11 @@ public:
     phlipbot::memory::WriteRaw<T>(base_ptr + offset, t);
   }
 
+  virtual std::string GetName();
+
   phlipbot::types::Guid const guid;
   uintptr_t const base_ptr;
-  phlipbot::types::ObjectType const obj_type;
+  phlipbot::types::ObjectType const obj_type{
+    phlipbot::types::ObjectType::NONE };
 };
 }
