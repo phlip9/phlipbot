@@ -292,6 +292,7 @@ namespace offsets
     Rage                    = 0x60,
     TargetGuid              = 0x40,
     CastingSpellId          = 0xC84,
+    UnitNamePtr             = 0xB28,
     CorpseOwnedBy           = 0x18,
     ItemId                  = 0xC,
     ItemStackCount          = 0x38,
@@ -304,7 +305,7 @@ namespace offsets
     FirstBuff               = 0xBC,
     FirstDebuff             = 0x13C,
     NextBuff                = 0x4,
-    NamePtr                 = 0x214,
+    GameObjNamePtr          = 0x20C,
   };
 
   enum class OpCodes : int32_t

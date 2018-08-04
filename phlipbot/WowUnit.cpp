@@ -4,12 +4,21 @@
 #include <vector>
 #include <stdint.h>
 
+#include "memory.hpp"
+
 namespace phlipbot
 {
 std::string WowUnit::GetName()
 {
-  // TODO(phlip9): implement WowUnit::GetName()
-  return "";
+  uintptr_t const name_ptr =
+    GetDescriptor<uintptr_t>(offsets::Descriptors::UnitNamePtr);
+  if (!name_ptr) return "";
+
+  uintptr_t const str_ptr = memory::ReadRaw<uintptr_t>(name_ptr);
+  if (!str_ptr) return "";
+
+  // TODO(phlip9): need to reverse actual max size
+  return memory::ReadCStr(str_ptr, 0x40);
 }
 
 std::vector<uint32_t> WowUnit::GetBuffIds()
