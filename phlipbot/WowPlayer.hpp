@@ -15,6 +15,8 @@ public:
   WowPlayer(const WowPlayer &obj) = default;
   virtual ~WowPlayer() {};
 
+  virtual std::string GetName();
+
   phlipbot::types::ObjectType const obj_type{
     phlipbot::types::ObjectType::PLAYER };
 };
