@@ -154,11 +154,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dxhook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
+    <ClCompile Include="window.cpp" />
     <ClCompile Include="WowGameObject.cpp" />
     <ClCompile Include="WowItem.cpp" />
     <ClCompile Include="WowObject.cpp" />
+    <ClCompile Include="WowPlayer.cpp" />
     <ClCompile Include="WowUnit.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -170,8 +173,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="detour_helpers.hpp" />
+    <ClInclude Include="dxhook.hpp" />
     <ClInclude Include="memory.hpp" />
     <ClInclude Include="ObjectManager.hpp" />
+    <ClInclude Include="window.hpp" />
     <ClInclude Include="WowContainer.hpp" />
     <ClInclude Include="WowGameObject.hpp" />
     <ClInclude Include="WowItem.hpp" />
