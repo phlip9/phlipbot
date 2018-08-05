@@ -8,14 +8,14 @@
 
 namespace phlipbot
 {
-struct WowItem : WowObject
-{
+struct WowItem : WowObject {
 public:
   explicit WowItem(types::Guid const guid, uintptr_t const base_ptr)
     : WowObject(guid, base_ptr)
-  { }
-  WowItem(const WowItem &obj) = default;
-  virtual ~WowItem() {};
+  {
+  }
+  WowItem(const WowItem& obj) = default;
+  virtual ~WowItem(){};
 
   inline uint32_t GetItemId()
   {
@@ -24,17 +24,20 @@ public:
 
   inline uint32_t GetStackCount()
   {
-    return GetDescriptor<uint32_t>(phlipbot::offsets::Descriptors::ItemStackCount);
+    return GetDescriptor<uint32_t>(
+      phlipbot::offsets::Descriptors::ItemStackCount);
   }
 
   inline uint32_t GetDurability()
   {
-    return GetDescriptor<uint32_t>(phlipbot::offsets::Descriptors::ItemDurability);
+    return GetDescriptor<uint32_t>(
+      phlipbot::offsets::Descriptors::ItemDurability);
   }
 
   inline uint32_t GetMaxDurability()
   {
-    return GetDescriptor<uint32_t>(phlipbot::offsets::Descriptors::ItemMaxDurability);
+    return GetDescriptor<uint32_t>(
+      phlipbot::offsets::Descriptors::ItemMaxDurability);
   }
 
   inline float GetDurabilityPercent()
@@ -48,7 +51,6 @@ public:
 
   phlipbot::types::ItemQuality GetQuality();
 
-  phlipbot::types::ObjectType const obj_type{
-    phlipbot::types::ObjectType::ITEM };
+  phlipbot::types::ObjectType const obj_type{phlipbot::types::ObjectType::ITEM};
 };
 }

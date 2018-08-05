@@ -6,8 +6,5 @@
 
 namespace phlipbot
 {
-std::string WowObject::GetName()
-{
-  return "";
-}
+std::string WowObject::GetName() { return ""; }
 }

@@ -2,19 +2,19 @@
 
 #include <string>
 
-#include "wow_constants.hpp"
 #include "WowObject.hpp"
+#include "wow_constants.hpp"
 
 namespace phlipbot
 {
-struct WowGameObject : WowObject
-{
+struct WowGameObject : WowObject {
 public:
   explicit WowGameObject(types::Guid const guid, uintptr_t const base_ptr)
     : WowObject(guid, base_ptr)
-  { }
-  WowGameObject(const WowGameObject &obj) = default;
-  virtual ~WowGameObject() {};
+  {
+  }
+  WowGameObject(const WowGameObject& obj) = default;
+  virtual ~WowGameObject(){};
 
   inline types::XYZ WowGameObject::GetPosition()
   {
@@ -30,6 +30,6 @@ public:
   virtual std::string GetName();
 
   phlipbot::types::ObjectType const obj_type{
-    phlipbot::types::ObjectType::GAMEOBJ };
+    phlipbot::types::ObjectType::GAMEOBJ};
 };
 }

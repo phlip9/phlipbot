@@ -38,12 +38,9 @@ HWND& GetCurrentWindow()
   return hwnd;
 }
 
-void SetCurrentWindow(HWND hwnd)
-{
-  GetCurrentWindow() = hwnd;
-}
+void SetCurrentWindow(HWND hwnd) { GetCurrentWindow() = hwnd; }
 
-// find the root window of a process 
+// find the root window of a process
 boost::optional<HWND> FindMainWindow(hadesmem::Process const& process)
 {
   enum_windows_aux aux_data;
@@ -65,9 +62,8 @@ void LogWindowTitle(HWND const wnd)
   char buf[256];
   if (!GetWindowTextA(wnd, static_cast<LPSTR>(buf), sizeof(buf))) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{}
-        << hadesmem::ErrorString{ "GetWindowTextA failed" }
-        << hadesmem::ErrorCodeWinLast{ ::GetLastError() });
+      hadesmem::Error{} << hadesmem::ErrorString{"GetWindowTextA failed"}
+                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
   }
   HADESMEM_DETAIL_TRACE_FORMAT_A("window title = %s", buf);
 }

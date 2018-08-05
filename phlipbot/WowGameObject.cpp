@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 
-#include "wow_constants.hpp"
-#include "memory.hpp"
 #include "WowObject.hpp"
+#include "memory.hpp"
+#include "wow_constants.hpp"
 
 using namespace phlipbot::types;
 using namespace phlipbot::offsets;

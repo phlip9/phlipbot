@@ -1,8 +1,8 @@
 #include "WowUnit.hpp"
 
+#include <stdint.h>
 #include <string>
 #include <vector>
-#include <stdint.h>
 
 #include "memory.hpp"
 
@@ -26,8 +26,8 @@ std::vector<uint32_t> WowUnit::GetBuffIds()
   std::vector<uint32_t> buffs;
 
   ptrdiff_t buff_offset =
-    offsets::ObjectManagerOffsets::DescriptorOffset
-    + static_cast<ptrdiff_t>(offsets::Descriptors::FirstBuff);
+    offsets::ObjectManagerOffsets::DescriptorOffset +
+    static_cast<ptrdiff_t>(offsets::Descriptors::FirstBuff);
 
   ptrdiff_t next_offset =
     static_cast<ptrdiff_t>(offsets::Descriptors::NextBuff);
@@ -48,8 +48,8 @@ std::vector<uint32_t> WowUnit::GetDebuffIds()
   std::vector<uint32_t> debuffs;
 
   ptrdiff_t debuff_offset =
-    offsets::ObjectManagerOffsets::DescriptorOffset
-    + static_cast<ptrdiff_t>(offsets::Descriptors::FirstDebuff);
+    offsets::ObjectManagerOffsets::DescriptorOffset +
+    static_cast<ptrdiff_t>(offsets::Descriptors::FirstDebuff);
 
   ptrdiff_t next_offset =
     static_cast<ptrdiff_t>(offsets::Descriptors::NextBuff);

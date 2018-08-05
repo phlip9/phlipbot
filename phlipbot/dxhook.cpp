@@ -1,9 +1,9 @@
 #include "dxhook.hpp"
 
+#include <hadesmem/detail/smart_handle.hpp>
+#include <hadesmem/detail/trace.hpp>
 #include <hadesmem/error.hpp>
 #include <hadesmem/module.hpp>
-#include <hadesmem/detail/trace.hpp>
-#include <hadesmem/detail/smart_handle.hpp>
 
 #include "window.hpp"
 
@@ -12,7 +12,8 @@ namespace phlipbot
 std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_EndScene_Fn>>&
 GetIDirect3DDevice9EndSceneDetour() noexcept
 {
-  static std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_EndScene_Fn>>
+  static std::unique_ptr<
+    hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_EndScene_Fn>>
     detour;
   return detour;
 }
@@ -20,7 +21,8 @@ GetIDirect3DDevice9EndSceneDetour() noexcept
 std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_Reset_Fn>>&
 GetIDirect3DDevice9ResetDetour() noexcept
 {
-  static std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_Reset_Fn>>
+  static std::unique_ptr<
+    hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_Reset_Fn>>
     detour;
   return detour;
 }
@@ -39,10 +41,11 @@ d3d9_offsets GetD3D9Offsets(IDirect3DDevice9Ex* device_ex)
   return offsets;
 }
 
-IDirect3DDevice9Ex* GetD3D9Device(hadesmem::Process const& process, HWND const wnd)
+IDirect3DDevice9Ex*
+GetD3D9Device(hadesmem::Process const& process, HWND const wnd)
 {
   // get d3d9.dll module
-  hadesmem::Module const d3d9_mod{ process, L"d3d9.dll" };
+  hadesmem::Module const d3d9_mod{process, L"d3d9.dll"};
 
   // get the Direct3DCreate9Ex function
   auto const direct3d_create_9_ex =
@@ -51,8 +54,8 @@ IDirect3DDevice9Ex* GetD3D9Device(hadesmem::Process const& process, HWND const w
   if (!direct3d_create_9_ex) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{}
-        << hadesmem::ErrorString{ "GetProcAddress for Direct3DCreate9Ex failed" }
-        << hadesmem::ErrorCodeWinLast{ ::GetLastError() });
+      << hadesmem::ErrorString{"GetProcAddress for Direct3DCreate9Ex failed"}
+      << hadesmem::ErrorCodeWinLast{::GetLastError()});
   }
 
   // get the IDirect3D9Ex interface impl
@@ -61,12 +64,11 @@ IDirect3DDevice9Ex* GetD3D9Device(hadesmem::Process const& process, HWND const w
     direct3d_create_9_ex(D3D_SDK_VERSION, &d3d9_ex);
   if (FAILED(create_d3d9_ex_hr)) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{}
-        << hadesmem::ErrorString{ "Direct3DCreate9Ex failed" }
-        << hadesmem::ErrorCodeWinHr{ create_d3d9_ex_hr });
+      hadesmem::Error{} << hadesmem::ErrorString{"Direct3DCreate9Ex failed"}
+                        << hadesmem::ErrorCodeWinHr{create_d3d9_ex_hr});
   }
 
-  hadesmem::detail::SmartComHandle smart_d3d9_ex{ d3d9_ex };
+  hadesmem::detail::SmartComHandle smart_d3d9_ex{d3d9_ex};
 
   D3DPRESENT_PARAMETERS pp = {};
   pp.Windowed = TRUE;
@@ -81,18 +83,14 @@ IDirect3DDevice9Ex* GetD3D9Device(hadesmem::Process const& process, HWND const w
   // get the device
   IDirect3DDevice9Ex* device_ex = nullptr;
   auto const create_device_hr = d3d9_ex->CreateDeviceEx(
-    D3DADAPTER_DEFAULT,
-    D3DDEVTYPE_HAL,
-    wnd,
-    D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
-    &pp,
-    nullptr,
-    &device_ex);
+    D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, wnd,
+    D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES, &pp,
+    nullptr, &device_ex);
   if (FAILED(create_device_hr)) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{}
-        << hadesmem::ErrorString{ "IDirect3D9Ex::CreateDeviceEx failed" }
-        << hadesmem::ErrorCodeWinHr{ create_device_hr });
+      << hadesmem::ErrorString{"IDirect3D9Ex::CreateDeviceEx failed"}
+      << hadesmem::ErrorCodeWinHr{create_device_hr});
   }
 
   HWND const hwnd = phlipbot::GetWindowFromDevice(device_ex);

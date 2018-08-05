@@ -3,19 +3,19 @@
 #include <vector>
 
 #include "WowObject.hpp"
-#include "wow_constants.hpp"
 #include "memory.hpp"
+#include "wow_constants.hpp"
 
 namespace phlipbot
 {
-struct WowUnit : WowObject
-{
+struct WowUnit : WowObject {
 public:
   explicit WowUnit(types::Guid const guid, uintptr_t const base_ptr)
     : WowObject(guid, base_ptr)
-  { }
-  WowUnit(const WowUnit &obj) = default;
-  virtual ~WowUnit() {};
+  {
+  }
+  WowUnit(const WowUnit& obj) = default;
+  virtual ~WowUnit(){};
 
   inline types::XYZ GetPosition()
   {
@@ -121,7 +121,6 @@ public:
   std::vector<uint32_t> GetBuffIds();
   std::vector<uint32_t> GetDebuffIds();
 
-  phlipbot::types::ObjectType const obj_type{
-    phlipbot::types::ObjectType::UNIT };
+  phlipbot::types::ObjectType const obj_type{phlipbot::types::ObjectType::UNIT};
 };
 }

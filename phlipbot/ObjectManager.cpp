@@ -12,13 +12,13 @@
 
 #include <hadesmem/detail/trace.hpp>
 
-#include "wow_constants.hpp"
-#include "WowObject.hpp"
+#include "WowContainer.hpp"
 #include "WowGameObject.hpp"
 #include "WowItem.hpp"
-#include "WowContainer.hpp"
-#include "WowUnit.hpp"
+#include "WowObject.hpp"
 #include "WowPlayer.hpp"
+#include "WowUnit.hpp"
+#include "wow_constants.hpp"
 
 // TODO(phlip9): implement iterating through ObjectManager WowObjects
 // TODO(phlip9): fill out other WowObject types (Item, Container, Unit, Player)
@@ -26,21 +26,18 @@
 using namespace phlipbot::types;
 using namespace boost::adaptors;
 
-using ClntObjMgr__GetActivePlayer_Fn = Guid(__stdcall *)();
+using ClntObjMgr__GetActivePlayer_Fn = Guid(__stdcall*)();
 
-using ClntObjMgr__ObjectPtr_Fn =
-  uintptr_t(__fastcall *)(
-    uint32_t filter,
-    const char* fileName,
-    Guid guid,
-    uint32_t lineNum);
+using ClntObjMgr__ObjectPtr_Fn = uintptr_t(__fastcall*)(uint32_t filter,
+                                                        const char* fileName,
+                                                        Guid guid,
+                                                        uint32_t lineNum);
 
 using ClntObjMgr__EnumVisibleObjects_Callback_Fn =
-  uint32_t(__thiscall *)(uint32_t filter, Guid guid);
+  uint32_t(__thiscall*)(uint32_t filter, Guid guid);
 
-using ClntObjMgr__EnumVisibleObjects_Fn =
-  uint32_t(__fastcall *)(
-    ClntObjMgr__EnumVisibleObjects_Callback_Fn callback, uint32_t filter);
+using ClntObjMgr__EnumVisibleObjects_Fn = uint32_t(__fastcall*)(
+  ClntObjMgr__EnumVisibleObjects_Callback_Fn callback, uint32_t filter);
 
 static inline Guid ClntObjMgr__GetActivePlayer()
 {
@@ -53,9 +50,8 @@ static inline Guid ClntObjMgr__GetActivePlayer()
 
 static inline uintptr_t ClntObjMgr__ObjectPtr(uint32_t filter, Guid guid)
 {
-  auto const objectPtrFn =
-    reinterpret_cast<ClntObjMgr__ObjectPtr_Fn>(
-      phlipbot::offsets::Functions::ClntObjMgr__ObjectPtr);
+  auto const objectPtrFn = reinterpret_cast<ClntObjMgr__ObjectPtr_Fn>(
+    phlipbot::offsets::Functions::ClntObjMgr__ObjectPtr);
 
   return (objectPtrFn)(filter, nullptr, guid, 0);
 }
@@ -78,7 +74,7 @@ struct ThisT {
 
     uintptr_t const obj_type_ptr =
       obj_ptr + phlipbot::offsets::ObjectManagerOffsets::ObjType;
-    
+
     ObjectType const obj_type =
       static_cast<ObjectType>(phlipbot::memory::ReadRaw<uint8_t>(obj_type_ptr));
 
@@ -86,17 +82,17 @@ struct ThisT {
     auto& guid_obj_cache = omgr.guid_obj_cache;
 
     if (obj_type == ObjectType::NONE) {
-      guid_obj_cache.insert({ guid, phlipbot::WowObject{ guid, obj_ptr } });
+      guid_obj_cache.insert({guid, phlipbot::WowObject{guid, obj_ptr}});
     } else if (obj_type == ObjectType::ITEM) {
-      guid_obj_cache.insert({ guid, phlipbot::WowUnit{ guid, obj_ptr } });
+      guid_obj_cache.insert({guid, phlipbot::WowUnit{guid, obj_ptr}});
     } else if (obj_type == ObjectType::CONTAINER) {
-      guid_obj_cache.insert({ guid, phlipbot::WowContainer{ guid, obj_ptr } });
+      guid_obj_cache.insert({guid, phlipbot::WowContainer{guid, obj_ptr}});
     } else if (obj_type == ObjectType::UNIT) {
-      guid_obj_cache.insert({ guid, phlipbot::WowUnit{ guid, obj_ptr } });
+      guid_obj_cache.insert({guid, phlipbot::WowUnit{guid, obj_ptr}});
     } else if (obj_type == ObjectType::PLAYER) {
-      guid_obj_cache.insert({ guid, phlipbot::WowPlayer{ guid, obj_ptr } });
+      guid_obj_cache.insert({guid, phlipbot::WowPlayer{guid, obj_ptr}});
     } else if (obj_type == ObjectType::GAMEOBJ) {
-      guid_obj_cache.insert({ guid, phlipbot::WowGameObject{ guid, obj_ptr } });
+      guid_obj_cache.insert({guid, phlipbot::WowGameObject{guid, obj_ptr}});
     } else if (obj_type == ObjectType::DYNOBJ) {
       // skip
     } else if (obj_type == ObjectType::CORPSE) {
@@ -105,7 +101,7 @@ struct ThisT {
       // TODO(phlip9): Error, unknown object type
       // TODO(phlip9): Can we throw in this context?
       HADESMEM_DETAIL_THROW_EXCEPTION(
-        hadesmem::Error{} << hadesmem::ErrorString{ "Unknown ObjectType" });
+        hadesmem::Error{} << hadesmem::ErrorString{"Unknown ObjectType"});
     }
 
     // continue
@@ -130,13 +126,9 @@ static inline uint32_t ClntObjMgr__EnumVisibleObjects(uint32_t filter)
 
 namespace phlipbot
 {
-Guid ObjectManager::GetPlayerGuid()
-{
-  return ClntObjMgr__GetActivePlayer();
-}
+Guid ObjectManager::GetPlayerGuid() { return ClntObjMgr__GetActivePlayer(); }
 
-boost::optional<WowPlayer const&>
-ObjectManager::GetPlayer()
+boost::optional<WowPlayer const&> ObjectManager::GetPlayer()
 {
   Guid player_guid = GetPlayerGuid();
   if (!player_guid) return boost::none;
@@ -145,7 +137,7 @@ ObjectManager::GetPlayer()
   if (!o_obj) return boost::none;
 
   auto const& obj = *o_obj;
-  
+
   HADESMEM_DETAIL_ASSERT(obj.obj_type == ObjectType::PLAYER);
 
   return dynamic_cast<WowPlayer const&>(obj);
@@ -175,27 +167,39 @@ ObjectManager::GetObjByGuid(types::Guid const guid)
 
 template <>
 bool ObjectManager::is_obj_type<WowObject>(WowObject const& obj)
-{ return obj.obj_type == ObjectType::NONE; }
+{
+  return obj.obj_type == ObjectType::NONE;
+}
 
 template <>
 bool ObjectManager::is_obj_type<WowGameObject>(WowObject const& obj)
-{ return obj.obj_type == ObjectType::GAMEOBJ; }
+{
+  return obj.obj_type == ObjectType::GAMEOBJ;
+}
 
 template <>
 bool ObjectManager::is_obj_type<WowItem>(WowObject const& obj)
-{ return obj.obj_type == ObjectType::ITEM; }
+{
+  return obj.obj_type == ObjectType::ITEM;
+}
 
 template <>
 bool ObjectManager::is_obj_type<WowContainer>(WowObject const& obj)
-{ return obj.obj_type == ObjectType::CONTAINER; }
+{
+  return obj.obj_type == ObjectType::CONTAINER;
+}
 
 template <>
 bool ObjectManager::is_obj_type<WowUnit>(WowObject const& obj)
-{ return obj.obj_type == ObjectType::UNIT; }
+{
+  return obj.obj_type == ObjectType::UNIT;
+}
 
 template <>
 bool ObjectManager::is_obj_type<WowPlayer>(WowObject const& obj)
-{ return obj.obj_type == ObjectType::PLAYER; }
+{
+  return obj.obj_type == ObjectType::PLAYER;
+}
 
 template <typename WowT>
 ObjectManager::Range<WowT> ObjectManager::IterObjs()
@@ -211,5 +215,4 @@ void ObjectManager::Test()
 }
 
 // TODO(phlip9): implement iterators specialized to units, gameobjects, etc...
-
 }
