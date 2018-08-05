@@ -113,6 +113,9 @@ public:
     return GetDescriptor<uint32_t>(offsets::Descriptors::ChannelingSpellId);
   }
 
+  // TODO(phlip9): is critter
+  // bool GetIsCritter();
+
   virtual std::string GetName();
 
   std::vector<uint32_t> GetBuffIds();

@@ -54,9 +54,10 @@ namespace types
     CORPSE     = 7,
   };
 
-  enum class ObjectFilter : uint32_t
+  namespace ObjectFilter
   {
-    ALL = 0xFFFFFFFF,
+    uint32_t const
+      ALL = 0xFFFFFFFF;
   };
 
   namespace DynamicFlags
@@ -247,6 +248,7 @@ namespace offsets
       MapId                = 0x0084C498,
       AntiDc               = 0x00B41D98,
       LoginState           = 0x00B41478,
+      DBCache__NameCache   = 0x00C0E228,
       DBCache__ItemStats_C = 0x00C0E2A0;
   }
 
