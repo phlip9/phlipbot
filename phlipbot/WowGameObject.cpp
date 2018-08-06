@@ -13,14 +13,14 @@ namespace phlipbot
 {
 std::string WowGameObject::GetName()
 {
-  uintptr_t ptr1 = GetRelative<uintptr_t>(0x214);
+  uintptr_t name_cache_ptr =
+    GetDescriptor<uintptr_t>(Descriptors::GameObjNamePtr);
+  if (!name_cache_ptr) return "";
 
-  if (!ptr1) return "";
+  uintptr_t name_ptr =
+    phlipbot::memory::ReadRaw<uintptr_t>(name_cache_ptr + 0x8);
+  if (!name_ptr) return "";
 
-  uintptr_t ptr2 = phlipbot::memory::ReadRaw<uintptr_t>(ptr1 + 0x8);
-
-  if (!ptr2) return "";
-
-  return phlipbot::memory::ReadCStr(ptr2, 0x40);
+  return phlipbot::memory::ReadCStr(name_ptr, 0x40);
 }
 }

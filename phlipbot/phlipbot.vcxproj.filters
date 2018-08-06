@@ -36,10 +36,16 @@
     <ClCompile Include="WowPlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="window.cpp">
+    <ClCompile Include="dxhook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dxhook.cpp">
+    <ClCompile Include="PhlipBot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,13 +77,19 @@
     <ClInclude Include="WowPlayer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="dxhook.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="detour_helpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PhlipBot.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

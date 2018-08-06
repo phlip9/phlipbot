@@ -49,6 +49,13 @@ inline void DetourD3D9(hadesmem::Process const& process,
            reset_fn);
 }
 
+inline bool IsD3D9Detoured()
+{
+  // check that both detours are set
+  return GetIDirect3DDevice9EndSceneDetour() &&
+         GetIDirect3DDevice9ResetDetour();
+}
+
 inline void UndetourD3D9()
 {
   UndetourFn("IDirect3DDevice9::EndScene", GetIDirect3DDevice9EndSceneDetour());

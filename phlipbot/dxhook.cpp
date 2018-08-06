@@ -5,8 +5,6 @@
 #include <hadesmem/error.hpp>
 #include <hadesmem/module.hpp>
 
-#include "window.hpp"
-
 namespace phlipbot
 {
 std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_EndScene_Fn>>&
@@ -92,9 +90,6 @@ GetD3D9Device(hadesmem::Process const& process, HWND const wnd)
       << hadesmem::ErrorString{"IDirect3D9Ex::CreateDeviceEx failed"}
       << hadesmem::ErrorCodeWinHr{create_device_hr});
   }
-
-  HWND const hwnd = phlipbot::GetWindowFromDevice(device_ex);
-  phlipbot::LogWindowTitle(hwnd);
 
   return device_ex;
 }
