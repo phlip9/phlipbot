@@ -51,6 +51,22 @@ void Gui::Render()
 
   if (ImGui::Begin("phlipbot")) {
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+
+    if (ImGui::Button("Dump Objects")) {
+      auto& objmgr = ObjectManager::Get();
+
+      objmgr.EnumVisibleObjects();
+
+      // TODO(phlip9): more general dumping
+
+      for (auto obj : objmgr.IterObjs<WowItem>()) {
+        HADESMEM_DETAIL_TRACE_FORMAT_A("{ name: %s, guid: %#018" PRIx64
+                                       ", base_ptr: %#10" PRIx32
+                                       ", type: % " PRIx8 " }",
+                                       obj->GetName().c_str(), obj->guid,
+                                       obj->base_ptr, obj->GetObjectType());
+      }
+    }
   }
   ImGui::End();
 

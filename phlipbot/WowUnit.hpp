@@ -15,7 +15,7 @@ public:
   {
   }
   WowUnit(const WowUnit& obj) = default;
-  virtual ~WowUnit(){};
+  virtual ~WowUnit() = default;
 
   inline types::XYZ GetPosition()
   {
@@ -116,11 +116,11 @@ public:
   // TODO(phlip9): is critter
   // bool GetIsCritter();
 
-  virtual std::string GetName();
+  virtual std::string GetName() override;
+
+  virtual phlipbot::types::ObjectType GetObjectType() const override;
 
   std::vector<uint32_t> GetBuffIds();
   std::vector<uint32_t> GetDebuffIds();
-
-  phlipbot::types::ObjectType const obj_type{phlipbot::types::ObjectType::UNIT};
 };
 }

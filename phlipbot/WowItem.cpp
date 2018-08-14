@@ -26,8 +26,11 @@ uintptr_t GetItemStatsPtrFromDBCache(uint32_t item_id)
   // just an empty guid
   Guid guid{0};
 
+  // TODO(phlip9): Maybe just intrusively iterate over the cache entries?
+  // TODO(phlip9): Reverse DBCache__ItemStats_C__GetRecord since parameters
+  //               don't seem to be correct.
   // TODO(phlip9): pad stack somehow? looks like GetRecord might be clobbering?
-  // don't pass in callback
+  //               don't pass in callback
   return (get_record_fn)(item_cache_ptr, item_id, &guid, 0, 0);
 }
 
@@ -35,6 +38,7 @@ namespace phlipbot
 {
 std::string WowItem::GetName()
 {
+  // TODO(phlip9): If the item is not in the item cache, query the server first.
   uint32_t const item_id = GetItemId();
   uintptr_t const item_stats_ptr = GetItemStatsPtrFromDBCache(item_id);
 
@@ -56,4 +60,6 @@ ItemQuality WowItem::GetQuality()
 
   return static_cast<ItemQuality>(quality);
 }
+
+ObjectType WowItem::GetObjectType() const { return ObjectType::ITEM; }
 }

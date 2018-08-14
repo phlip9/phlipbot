@@ -160,6 +160,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
     <ClCompile Include="PhlipBot.cpp" />
+    <ClCompile Include="WowContainer.cpp" />
     <ClCompile Include="WowGameObject.cpp" />
     <ClCompile Include="WowItem.cpp" />
     <ClCompile Include="WowObject.cpp" />

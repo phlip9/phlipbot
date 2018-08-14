@@ -23,4 +23,6 @@ std::string WowGameObject::GetName()
 
   return phlipbot::memory::ReadCStr(name_ptr, 0x40);
 }
+
+ObjectType WowGameObject::GetObjectType() const { return ObjectType::GAMEOBJ; }
 }

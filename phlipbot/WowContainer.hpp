@@ -13,9 +13,8 @@ public:
   {
   }
   WowContainer(const WowContainer& obj) = default;
-  virtual ~WowContainer(){};
+  virtual ~WowContainer() = default;
 
-  phlipbot::types::ObjectType const obj_type{
-    phlipbot::types::ObjectType::CONTAINER};
+  virtual phlipbot::types::ObjectType GetObjectType() const override;
 };
 }

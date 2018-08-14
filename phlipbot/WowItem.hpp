@@ -15,7 +15,7 @@ public:
   {
   }
   WowItem(const WowItem& obj) = default;
-  virtual ~WowItem(){};
+  virtual ~WowItem() = default;
 
   inline uint32_t GetItemId()
   {
@@ -47,10 +47,10 @@ public:
     return (durability / max_durability) * 100;
   }
 
-  virtual std::string GetName();
+  virtual std::string GetName() override;
+
+  virtual phlipbot::types::ObjectType GetObjectType() const override;
 
   phlipbot::types::ItemQuality GetQuality();
-
-  phlipbot::types::ObjectType const obj_type{phlipbot::types::ObjectType::ITEM};
 };
 }

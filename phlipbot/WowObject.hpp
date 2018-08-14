@@ -15,7 +15,7 @@ public:
   {
   }
   WowObject(const WowObject& obj) = default;
-  virtual ~WowObject(){};
+  virtual ~WowObject() = default;
 
   template <typename T>
   inline T GetDescriptor(phlipbot::offsets::Descriptors const desc_offset)
@@ -52,8 +52,11 @@ public:
 
   virtual std::string GetName();
 
+  virtual phlipbot::types::ObjectType GetObjectType() const;
+
+  // TODO(phlip9): virtual to_string and << ostream operator
+
   phlipbot::types::Guid const guid;
   uintptr_t const base_ptr;
-  phlipbot::types::ObjectType const obj_type{phlipbot::types::ObjectType::NONE};
 };
 }

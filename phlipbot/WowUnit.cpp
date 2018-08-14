@@ -6,6 +6,8 @@
 
 #include "memory.hpp"
 
+using namespace phlipbot::types;
+
 namespace phlipbot
 {
 std::string WowUnit::GetName()
@@ -20,6 +22,8 @@ std::string WowUnit::GetName()
   // TODO(phlip9): need to reverse actual max size
   return memory::ReadCStr(str_ptr, 0x40);
 }
+
+ObjectType WowUnit::GetObjectType() const { return ObjectType::UNIT; }
 
 std::vector<uint32_t> WowUnit::GetBuffIds()
 {

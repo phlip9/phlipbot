@@ -14,7 +14,7 @@ public:
   {
   }
   WowGameObject(const WowGameObject& obj) = default;
-  virtual ~WowGameObject(){};
+  virtual ~WowGameObject() = default;
 
   inline types::XYZ WowGameObject::GetPosition()
   {
@@ -27,9 +27,8 @@ public:
       offsets::Descriptors::GameObjectCreatedByGuid);
   }
 
-  virtual std::string GetName();
+  virtual std::string GetName() override;
 
-  phlipbot::types::ObjectType const obj_type{
-    phlipbot::types::ObjectType::GAMEOBJ};
+  virtual phlipbot::types::ObjectType GetObjectType() const override;
 };
 }

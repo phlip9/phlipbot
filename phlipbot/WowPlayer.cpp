@@ -29,4 +29,6 @@ std::string WowPlayer::GetName()
 
   return "";
 }
+
+ObjectType WowPlayer::GetObjectType() const { return ObjectType::PLAYER; }
 }
