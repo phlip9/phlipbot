@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <hadesmem/detail/assert.hpp>
+
 namespace phlipbot
 {
 namespace memory
@@ -17,13 +19,13 @@ inline T ReadRaw(uintptr_t const offset)
 
 inline std::string ReadCStr(uintptr_t const offset, size_t const max_size)
 {
-  // TODO(phlip9): can the temp buf get wrapped in a unique_ptr so it gets
-  //               **automagically** freed RAII style?
-  char* const buf = new char[max_size + 1];
-  std::strncpy(buf, reinterpret_cast<char*>(offset), max_size);
-  std::string result(buf);
-  delete[] buf;
-  return result;
+  char const* str_begin = reinterpret_cast<char const*>(offset);
+  char const* str_end =
+    reinterpret_cast<char const*>(std::memchr(str_begin, '\0', max_size));
+  HADESMEM_DETAIL_ASSERT(str_end != nullptr);
+
+  size_t const len = static_cast<size_t>(str_end - str_begin);
+  return std::string{str_begin, len};
 }
 
 template <typename T>
