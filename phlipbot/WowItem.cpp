@@ -10,9 +10,10 @@ using namespace phlipbot::types;
 using DBCache__ItemStats_C__GetRecord_Fn =
   uintptr_t(__thiscall*)(uintptr_t dbcache_ptr,
                          uint32_t item_id,
-                         const Guid* guid_ptr,
+                         Guid* guid_ptr,
                          uintptr_t callback,
-                         uintptr_t callback_args);
+                         uintptr_t callback_args,
+                         uint32_t do_callback);
 
 uintptr_t GetItemStatsPtrFromDBCache(uint32_t item_id)
 {
@@ -23,24 +24,19 @@ uintptr_t GetItemStatsPtrFromDBCache(uint32_t item_id)
   uintptr_t const item_cache_ptr =
     phlipbot::offsets::Data::DBCache__ItemStats_C;
 
-  // just an empty guid
   Guid guid{0};
-
-  // TODO(phlip9): Maybe just intrusively iterate over the cache entries?
-  // TODO(phlip9): Reverse DBCache__ItemStats_C__GetRecord since parameters
-  //               don't seem to be correct.
-  // TODO(phlip9): pad stack somehow? looks like GetRecord might be clobbering?
-  //               don't pass in callback
-  return (get_record_fn)(item_cache_ptr, item_id, &guid, 0, 0);
+  return (get_record_fn)(item_cache_ptr, item_id, &guid, 0, 0, 0);
 }
 
 namespace phlipbot
 {
 std::string WowItem::GetName()
 {
-  // TODO(phlip9): If the item is not in the item cache, query the server first.
   uint32_t const item_id = GetItemId();
   uintptr_t const item_stats_ptr = GetItemStatsPtrFromDBCache(item_id);
+
+  // TODO(phlip9): If the item is not in the item cache, query the server first.
+  if (!item_stats_ptr) return "";
 
   uintptr_t const name_ptr = phlipbot::memory::ReadRaw<uintptr_t>(
     item_stats_ptr + phlipbot::offsets::ItemStats::Name);
@@ -54,6 +50,9 @@ ItemQuality WowItem::GetQuality()
 {
   uint32_t const item_id = GetItemId();
   uintptr_t const item_stats_ptr = GetItemStatsPtrFromDBCache(item_id);
+
+  // TODO(phlip9): If the item is not in the item cache, query the server first.
+  if (!item_stats_ptr) return ItemQuality::Grey;
 
   uint32_t const quality = phlipbot::memory::ReadRaw<uint32_t>(
     item_stats_ptr + phlipbot::offsets::ItemStats::Quality);

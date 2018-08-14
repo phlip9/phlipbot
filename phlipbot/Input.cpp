@@ -77,7 +77,7 @@ LRESULT CALLBACK WindowProcCallback(HWND hwnd,
   // TODO(phlip9): push input messages onto threadsafe message queue and
   //               process in bot update
 
-  // Shift+F7 to toggle GUI visibility
+  // Shift+F9 to toggle GUI visibility
   bool const shift_down = !!(::GetAsyncKeyState(VK_SHIFT) & 0x8000);
   if (msg == WM_KEYDOWN && !((lParam >> 30) & 0x1) && wParam == VK_F9 &&
       shift_down) {

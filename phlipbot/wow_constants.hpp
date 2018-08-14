@@ -296,7 +296,7 @@ enum class Descriptors : ptrdiff_t
   CastingSpellId          = 0xC84,
   UnitNamePtr             = 0xB28,
   CorpseOwnedBy           = 0x18,
-  ItemId                  = 0xC,
+  ItemId                  = 0x34C,
   ItemStackCount          = 0x38,
   ItemDurability          = 0xB8,
   ItemMaxDurability       = 0xBC,
