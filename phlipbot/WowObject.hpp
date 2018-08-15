@@ -18,7 +18,7 @@ public:
   virtual ~WowObject() = default;
 
   template <typename T>
-  inline T GetDescriptor(phlipbot::offsets::Descriptors const desc_offset)
+  inline T GetDescriptor(phlipbot::offsets::Descriptors const desc_offset) const
   {
     uintptr_t const target =
       base_ptr + phlipbot::offsets::ObjectManagerOffsets::DescriptorOffset +
@@ -39,7 +39,7 @@ public:
   }
 
   template <typename T>
-  inline T GetRelative(ptrdiff_t const offset)
+  inline T GetRelative(ptrdiff_t const offset) const
   {
     return phlipbot::memory::ReadRaw<T>(base_ptr + offset);
   }
@@ -50,11 +50,12 @@ public:
     phlipbot::memory::WriteRaw<T>(base_ptr + offset, t);
   }
 
-  virtual std::string GetName();
-
+  virtual std::string GetName() const;
   virtual phlipbot::types::ObjectType GetObjectType() const;
 
-  // TODO(phlip9): virtual to_string and << ostream operator
+  virtual void PrintToStream(std::ostream& os) const;
+  std::string ToString() const;
+  friend std::ostream& operator<<(std::ostream& os, WowObject const* obj);
 
   phlipbot::types::Guid const guid;
   uintptr_t const base_ptr;

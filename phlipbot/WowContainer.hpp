@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "wow_constants.hpp"
 
 #include "WowItem.hpp"
@@ -14,6 +16,10 @@ public:
   }
   WowContainer(const WowContainer& obj) = default;
   virtual ~WowContainer() = default;
+
+  virtual uint32_t GetItemId() const override;
+
+  virtual void PrintToStream(std::ostream& os) const override;
 
   virtual phlipbot::types::ObjectType GetObjectType() const override;
 };

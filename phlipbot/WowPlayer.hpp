@@ -15,8 +15,10 @@ public:
   WowPlayer(const WowPlayer& obj) = default;
   virtual ~WowPlayer() = default;
 
-  virtual std::string GetName() override;
+  virtual std::string GetName() const override;
 
   virtual phlipbot::types::ObjectType GetObjectType() const override;
+
+  virtual void PrintToStream(std::ostream& os) const override;
 };
 }

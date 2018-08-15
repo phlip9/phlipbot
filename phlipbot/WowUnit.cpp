@@ -1,5 +1,7 @@
 #include "WowUnit.hpp"
 
+#include <iomanip>
+#include <iostream>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -10,7 +12,7 @@ using namespace phlipbot::types;
 
 namespace phlipbot
 {
-std::string WowUnit::GetName()
+std::string WowUnit::GetName() const
 {
   uintptr_t const name_ptr =
     GetDescriptor<uintptr_t>(offsets::Descriptors::UnitNamePtr);
@@ -25,7 +27,7 @@ std::string WowUnit::GetName()
 
 ObjectType WowUnit::GetObjectType() const { return ObjectType::UNIT; }
 
-std::vector<uint32_t> WowUnit::GetBuffIds()
+std::vector<uint32_t> WowUnit::GetBuffIds() const
 {
   std::vector<uint32_t> buffs;
 
@@ -33,7 +35,7 @@ std::vector<uint32_t> WowUnit::GetBuffIds()
     offsets::ObjectManagerOffsets::DescriptorOffset +
     static_cast<ptrdiff_t>(offsets::Descriptors::FirstBuff);
 
-  ptrdiff_t next_offset =
+  ptrdiff_t const next_offset =
     static_cast<ptrdiff_t>(offsets::Descriptors::NextBuff);
 
   uint32_t buff_id = GetRelative<uint32_t>(buff_offset);
@@ -47,7 +49,7 @@ std::vector<uint32_t> WowUnit::GetBuffIds()
   return buffs;
 }
 
-std::vector<uint32_t> WowUnit::GetDebuffIds()
+std::vector<uint32_t> WowUnit::GetDebuffIds() const
 {
   std::vector<uint32_t> debuffs;
 
@@ -55,7 +57,7 @@ std::vector<uint32_t> WowUnit::GetDebuffIds()
     offsets::ObjectManagerOffsets::DescriptorOffset +
     static_cast<ptrdiff_t>(offsets::Descriptors::FirstDebuff);
 
-  ptrdiff_t next_offset =
+  ptrdiff_t const next_offset =
     static_cast<ptrdiff_t>(offsets::Descriptors::NextBuff);
 
   uint32_t debuff_id = GetRelative<uint32_t>(debuff_offset);
@@ -67,5 +69,28 @@ std::vector<uint32_t> WowUnit::GetDebuffIds()
   }
 
   return debuffs;
+}
+
+void WowUnit::PrintToStream(std::ostream& os) const
+{
+  XYZ pos = GetPosition();
+
+  os << std::hex << std::setfill('0');
+  os << "{ type: WowUnit";
+  os << ", guid: 0x" << std::setw(16) << guid;
+  os << ", base_ptr: 0x" << std::setw(8) << base_ptr;
+  os << ", name: " << GetName();
+  os << ", position: { " << pos.X << ", " << pos.Y << ", " << pos.Z << " } ";
+  os << std::dec;
+  os << ", npc_id: " << GetNpcId();
+  os << ", faction_id: " << GetFactionId();
+  os << ", health: " << GetHealthPercent() << "%";
+  os << ", mana: " << GetManaPercent() << "%";
+  os << ", rage: " << GetRage();
+  os << std::hex;
+  os << ", target: " << std::setw(16) << GetTargetGuid();
+  os << ", movement_flags: " << std::setw(8) << GetMovementFlags();
+  os << ", dynamic_flags: " << std::setw(8) << GetDynamicFlags();
+  os << " }";
 }
 }

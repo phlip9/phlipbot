@@ -1,5 +1,7 @@
 #include "WowPlayer.hpp"
 
+#include <iomanip>
+#include <iostream>
 #include <stdint.h>
 #include <string>
 
@@ -11,7 +13,7 @@ using namespace phlipbot::offsets::Data;
 
 namespace phlipbot
 {
-std::string WowPlayer::GetName()
+std::string WowPlayer::GetName() const
 {
   uintptr_t const cache_ptr = offsets::Data::DBCache__NameCache;
 
@@ -31,4 +33,28 @@ std::string WowPlayer::GetName()
 }
 
 ObjectType WowPlayer::GetObjectType() const { return ObjectType::PLAYER; }
+
+
+void WowPlayer::PrintToStream(std::ostream& os) const
+{
+  XYZ pos = GetPosition();
+
+  os << std::hex << std::setfill('0');
+  os << "{ type: WowPlayer";
+  os << ", guid: 0x" << std::setw(16) << guid;
+  os << ", base_ptr: 0x" << std::setw(8) << base_ptr;
+  os << ", name: " << GetName();
+  os << ", position: { " << pos.X << ", " << pos.Y << ", " << pos.Z << " } ";
+  os << std::dec;
+  os << ", npc_id: " << GetNpcId();
+  os << ", faction_id: " << GetFactionId();
+  os << ", health: " << GetHealthPercent() << "%";
+  os << ", mana: " << GetManaPercent() << "%";
+  os << ", rage: " << GetRage();
+  os << std::hex;
+  os << ", target: " << std::setw(16) << GetTargetGuid();
+  os << ", movement_flags: " << std::setw(8) << GetMovementFlags();
+  os << ", dynamic_flags: " << std::setw(8) << GetDynamicFlags();
+  os << " }";
+}
 }

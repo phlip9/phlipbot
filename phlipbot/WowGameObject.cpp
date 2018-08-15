@@ -1,5 +1,7 @@
 #include "WowGameObject.hpp"
 
+#include <iomanip>
+#include <iostream>
 #include <stdint.h>
 
 #include "WowObject.hpp"
@@ -11,7 +13,7 @@ using namespace phlipbot::offsets;
 
 namespace phlipbot
 {
-std::string WowGameObject::GetName()
+std::string WowGameObject::GetName() const
 {
   uintptr_t name_cache_ptr =
     GetDescriptor<uintptr_t>(Descriptors::GameObjNamePtr);
@@ -25,4 +27,18 @@ std::string WowGameObject::GetName()
 }
 
 ObjectType WowGameObject::GetObjectType() const { return ObjectType::GAMEOBJ; }
+
+void WowGameObject::PrintToStream(std::ostream& os) const
+{
+  XYZ pos = GetPosition();
+
+  os << std::hex << std::setfill('0');
+  os << "{ type: WowGameObject";
+  os << ", guid: 0x" << std::setw(16) << guid;
+  os << ", base_ptr: 0x" << std::setw(8) << base_ptr;
+  os << ", name: " << GetName();
+  //os << ", created_by: 0x" << std::setw(16) << GetCreatedByGuid();
+  os << ", position: { " << pos.X << ", " << pos.Y << ", " << pos.Z << " } ";
+  os << " }";
+}
 }

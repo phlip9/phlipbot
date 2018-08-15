@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 
 #include "WowObject.hpp"
@@ -16,19 +17,24 @@ public:
   WowGameObject(const WowGameObject& obj) = default;
   virtual ~WowGameObject() = default;
 
-  inline types::XYZ WowGameObject::GetPosition()
+  inline types::XYZ WowGameObject::GetPosition() const
   {
     return GetDescriptor<types::XYZ>(offsets::Descriptors::GameObjPos);
   }
 
-  inline types::Guid WowGameObject::GetCreatedByGuid()
+  // TODO(phlip9): don't think this is correct
+  /*
+  inline types::Guid WowGameObject::GetCreatedByGuid() const
   {
     return GetDescriptor<types::Guid>(
       offsets::Descriptors::GameObjectCreatedByGuid);
   }
+  */
 
-  virtual std::string GetName() override;
+  virtual std::string GetName() const override;
 
   virtual phlipbot::types::ObjectType GetObjectType() const override;
+
+  virtual void PrintToStream(std::ostream& os) const override;
 };
 }

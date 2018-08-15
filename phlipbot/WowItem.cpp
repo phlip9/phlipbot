@@ -1,5 +1,7 @@
 #include "WowItem.hpp"
 
+#include <iomanip>
+#include <iostream>
 #include <string>
 
 #include "memory.hpp"
@@ -30,7 +32,12 @@ uintptr_t GetItemStatsPtrFromDBCache(uint32_t item_id)
 
 namespace phlipbot
 {
-std::string WowItem::GetName()
+uint32_t WowItem::GetItemId() const
+{
+  return GetDescriptor<uint32_t>(phlipbot::offsets::Descriptors::ItemId);
+}
+
+std::string WowItem::GetName() const
 {
   uint32_t const item_id = GetItemId();
   uintptr_t const item_stats_ptr = GetItemStatsPtrFromDBCache(item_id);
@@ -46,7 +53,7 @@ std::string WowItem::GetName()
   return phlipbot::memory::ReadCStr(name_ptr, 0x40);
 }
 
-ItemQuality WowItem::GetQuality()
+ItemQuality WowItem::GetQuality() const
 {
   uint32_t const item_id = GetItemId();
   uintptr_t const item_stats_ptr = GetItemStatsPtrFromDBCache(item_id);
@@ -58,6 +65,20 @@ ItemQuality WowItem::GetQuality()
     item_stats_ptr + phlipbot::offsets::ItemStats::Quality);
 
   return static_cast<ItemQuality>(quality);
+}
+
+void WowItem::PrintToStream(std::ostream& os) const
+{
+  os << std::hex << std::setfill('0');
+  os << "{ type: WowItem";
+  os << ", guid: 0x" << std::setw(16) << guid;
+  os << ", base_ptr: 0x" << std::setw(8) << base_ptr;
+  os << ", name: " << GetName();
+  os << std::dec;
+  os << ", item_id: " << GetItemId();
+  os << ", count: " << GetStackCount();
+  os << ", durability: " << GetDurabilityPercent();
+  os << " }";
 }
 
 ObjectType WowItem::GetObjectType() const { return ObjectType::ITEM; }
