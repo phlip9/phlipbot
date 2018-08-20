@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -72,6 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -90,7 +92,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;STRICT;STRICT_TYPED_ITEMIDS;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ASMJIT_STATIC;ASMJIT_BUILD_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)phlipbot;$(HADESMEM_ROOT)\include\memory;$(BOOST_ROOT);$(HADESMEM_ROOT)\deps\asmjit\asmjit\src;$(HADESMEM_ROOT)\deps\udis86\udis86;$(HADESMEM_ROOT)\deps\imgui;$(HADESMEM_ROOT)\deps\imgui\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)phlipbot;..\deps\hadesmem\include\memory;$(BOOST_ROOT);..\deps\hadesmem\deps\asmjit\asmjit\src;..\deps\hadesmem\deps\udis86\udis86;..\deps\hadesmem\deps\imgui;..\deps\hadesmem\deps\imgui\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -99,7 +101,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_ROOT)\lib;$(HADESMEM_ROOT)\build\vs\Debug\Win32;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_ROOT)\lib;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>shlwapi.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -168,14 +170,6 @@
     <ClCompile Include="WowUnit.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\hadesmem\build\vs\imgui\imgui.vcxproj">
-      <Project>{ef8ed613-b239-4362-9361-f7d7b018e269}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\hadesmem\build\vs\udis86\udis86.vcxproj">
-      <Project>{8ed308b0-d0c4-4bb6-93d8-a4b3a8085dab}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="detour_helpers.hpp" />
     <ClInclude Include="dxhook.hpp" />
     <ClInclude Include="Gui.hpp" />
@@ -190,6 +184,17 @@
     <ClInclude Include="WowPlayer.hpp" />
     <ClInclude Include="WowUnit.hpp" />
     <ClInclude Include="wow_constants.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\deps\hadesmem\build\vs\asmjit\asmjit.vcxproj">
+      <Project>{0c721345-2478-4288-b9be-d1235c6a8f87}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\deps\hadesmem\build\vs\imgui\imgui.vcxproj">
+      <Project>{ef8ed613-b239-4362-9361-f7d7b018e269}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\deps\hadesmem\build\vs\udis86\udis86.vcxproj">
+      <Project>{8ed308b0-d0c4-4bb6-93d8-a4b3a8085dab}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

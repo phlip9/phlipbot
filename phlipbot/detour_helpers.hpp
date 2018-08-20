@@ -4,8 +4,22 @@
 #include <string>
 
 #include <hadesmem/detail/trace.hpp>
-#include <hadesmem/patcher.hpp>
 #include <hadesmem/process.hpp>
+
+// TODO(phlip9): probably a better way to static link libudis86
+//
+// VS builds libudis86 as a static library, which is correct.
+// However, when we build phlipbot, which is a dll, udis86/extern.h incorrectly
+// mangles the symbol names from, e.g., ud_init -> __imp__ud_init, thinking
+// that udis86 is being build as a dll now.
+//
+// For now, this is the only location that includes hadesmem/patcher.hpp
+// (which eventually includes libudis86.h), so just temporarily kill the
+// _USRDLL define so that it correctly sets the symbol names.
+#pragma push_macro("_USRDLL")
+#undef _USRDLL
+#include <hadesmem/patcher.hpp>
+#pragma pop_macro("_USRDLL")
 
 namespace phlipbot
 {
@@ -48,4 +62,4 @@ inline void UndetourFn(std::string const& name, std::unique_ptr<T>& detour)
                                    name.c_str());
   }
 }
-}
+} // namespace phlipbot

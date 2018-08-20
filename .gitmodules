@@ -1,0 +1,3 @@
+[submodule "deps/hadesmem"]
+	path = deps/hadesmem
+	url = git@github.com:phlip9/hadesmem.git
