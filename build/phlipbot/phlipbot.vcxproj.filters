@@ -15,84 +15,84 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="../../phlipbot/main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WowObject.cpp">
+    <ClCompile Include="../../phlipbot/WowObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WowGameObject.cpp">
+    <ClCompile Include="../../phlipbot/WowGameObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectManager.cpp">
+    <ClCompile Include="../../phlipbot/ObjectManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WowItem.cpp">
+    <ClCompile Include="../../phlipbot/WowItem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WowUnit.cpp">
+    <ClCompile Include="../../phlipbot/WowUnit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WowPlayer.cpp">
+    <ClCompile Include="../../phlipbot/WowPlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dxhook.cpp">
+    <ClCompile Include="../../phlipbot/dxhook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PhlipBot.cpp">
+    <ClCompile Include="../../phlipbot/PhlipBot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Input.cpp">
+    <ClCompile Include="../../phlipbot/Input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gui.cpp">
+    <ClCompile Include="../../phlipbot/Gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WowContainer.cpp">
+    <ClCompile Include="../../phlipbot/WowContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="wow_constants.hpp">
+    <ClInclude Include="../../phlipbot/wow_constants.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WowObject.hpp">
+    <ClInclude Include="../../phlipbot/WowObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="memory.hpp">
+    <ClInclude Include="../../phlipbot/memory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WowGameObject.hpp">
+    <ClInclude Include="../../phlipbot/WowGameObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectManager.hpp">
+    <ClInclude Include="../../phlipbot/ObjectManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WowItem.hpp">
+    <ClInclude Include="../../phlipbot/WowItem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WowContainer.hpp">
+    <ClInclude Include="../../phlipbot/WowContainer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WowUnit.hpp">
+    <ClInclude Include="../../phlipbot/WowUnit.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WowPlayer.hpp">
+    <ClInclude Include="../../phlipbot/WowPlayer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dxhook.hpp">
+    <ClInclude Include="../../phlipbot/dxhook.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="detour_helpers.hpp">
+    <ClInclude Include="../../phlipbot/detour_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PhlipBot.hpp">
+    <ClInclude Include="../../phlipbot/PhlipBot.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Input.hpp">
+    <ClInclude Include="../../phlipbot/Input.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gui.hpp">
+    <ClInclude Include="../../phlipbot/Gui.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

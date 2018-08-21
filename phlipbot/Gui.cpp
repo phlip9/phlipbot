@@ -4,9 +4,9 @@
 #include <d3d9.h>
 #include <inttypes.h>
 
-#include <imgui/imgui.h>
-
-#include <imgui/examples/directx9_example/imgui_impl_dx9.h>
+#include <imgui.h>
+#include <imgui_impl_dx9.h>
+#include <imgui_impl_win32.h>
 
 #include <hadesmem/detail/trace.hpp>
 
@@ -33,7 +33,17 @@ void Gui::Init(HWND const hwnd, IDirect3DDevice9* device)
     is_initialized);
   HADESMEM_DETAIL_ASSERT(!is_initialized);
 
-  ImGui_ImplDX9_Init(hwnd, device);
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+  io.MouseDrawCursor = false;
+
+  ImGui_ImplWin32_Init(hwnd);
+  ImGui_ImplDX9_Init(device);
+
+  ImGui::StyleColorsDark();
 
   is_initialized = true;
 }
@@ -45,6 +55,8 @@ void Gui::Render()
   if (!GetGuiIsVisible()) return;
 
   ImGui_ImplDX9_NewFrame();
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
 
   ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiSetCond_FirstUseEver);
   ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
@@ -64,7 +76,9 @@ void Gui::Render()
   }
   ImGui::End();
 
+  ImGui::EndFrame();
   ImGui::Render();
+  ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
 void Gui::Reset()
@@ -84,7 +98,9 @@ void Gui::Shutdown()
 
   ImGui_ImplDX9_InvalidateDeviceObjects();
   ImGui_ImplDX9_Shutdown();
+  ImGui_ImplWin32_Shutdown();
+  ImGui::DestroyContext();
 
   is_initialized = false;
 }
-}
+} // namespace phlipbot

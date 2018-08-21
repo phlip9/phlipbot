@@ -1,3 +1,6 @@
 [submodule "deps/hadesmem"]
 	path = deps/hadesmem
 	url = git@github.com:phlip9/hadesmem.git
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = git@github.com:ocornut/imgui.git

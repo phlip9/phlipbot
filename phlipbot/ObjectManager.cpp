@@ -16,8 +16,8 @@
 #include "WowUnit.hpp"
 #include "wow_constants.hpp"
 
-// TODO(phlip9): implement iterating through ObjectManager WowObjects
-// TODO(phlip9): fill out other WowObject types (Item, Container, Unit, Player)
+// TODO(phlip9): possibe to use boost::bind to bind object manager instance
+//               to EnumVisibleObjects_Callback?
 
 using namespace phlipbot::types;
 

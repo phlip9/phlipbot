@@ -2,7 +2,8 @@
 
 #include <Shlwapi.h>
 
-#include <imgui/imgui.h>
+#include <imgui.h>
+#include <imgui_impl_win32.h>
 
 #include <hadesmem/detail/assert.hpp>
 #include <hadesmem/detail/trace.hpp>
@@ -21,52 +22,11 @@ void SetOriginalWndProc(WNDPROC const wnd_proc)
   GetOriginalWndProc() = wnd_proc;
 }
 
-LRESULT CALLBACK ImGui_ImplDX9_WndProcHandler(HWND,
+// Definition in imgui/examples/imgui_impl_win32.cpp
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                               UINT msg,
                                               WPARAM wParam,
-                                              LPARAM lParam)
-{
-  ImGuiIO& io = ImGui::GetIO();
-  switch (msg) {
-  case WM_LBUTTONDOWN:
-    io.MouseDown[0] = true;
-    return true;
-  case WM_LBUTTONUP:
-    io.MouseDown[0] = false;
-    return true;
-  case WM_RBUTTONDOWN:
-    io.MouseDown[1] = true;
-    return true;
-  case WM_RBUTTONUP:
-    io.MouseDown[1] = false;
-    return true;
-  case WM_MBUTTONDOWN:
-    io.MouseDown[2] = true;
-    return true;
-  case WM_MBUTTONUP:
-    io.MouseDown[2] = false;
-    return true;
-  case WM_MOUSEWHEEL:
-    io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
-    return true;
-  case WM_MOUSEMOVE:
-    io.MousePos.x = (signed short)(lParam);
-    io.MousePos.y = (signed short)(lParam >> 16);
-    return true;
-  case WM_KEYDOWN:
-    if (wParam < 256) io.KeysDown[wParam] = 1;
-    return true;
-  case WM_KEYUP:
-    if (wParam < 256) io.KeysDown[wParam] = 0;
-    return true;
-  case WM_CHAR:
-    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-    if (wParam > 0 && wParam < 0x10000)
-      io.AddInputCharacter((unsigned short)wParam);
-    return true;
-  }
-  return false;
-}
+                                              LPARAM lParam);
 
 LRESULT CALLBACK WindowProcCallback(HWND hwnd,
                                     UINT msg,
@@ -85,9 +45,10 @@ LRESULT CALLBACK WindowProcCallback(HWND hwnd,
     return true;
   }
 
-  // Try the ImGui input handler
-  if (phlipbot::GetGuiIsVisible() &&
-      ImGui_ImplDX9_WndProcHandler(hwnd, msg, wParam, lParam)) {
+  // TODO(phlip9): only capture input when focused on the window?
+  // Use the ImGui input handler when the Gui is visible
+  if (phlipbot::GetGuiIsVisible()) {
+    ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
     return true;
   }
 
@@ -108,10 +69,6 @@ void Input::HookInput(HWND const hwnd)
 {
   HADESMEM_DETAIL_TRACE_FORMAT_A("hwd: [%p], is_hooked: [%d]", hwnd, is_hooked);
   HADESMEM_DETAIL_ASSERT(!is_hooked);
-
-  ImGuiIO& io = ImGui::GetIO();
-  io.Fonts->AddFontDefault();
-  io.MouseDrawCursor = false;
 
   // Hook the original wnd proc
   if (!GetOriginalWndProc()) {
@@ -136,4 +93,4 @@ void Input::UnhookInput(HWND const hwnd)
 
   is_hooked = false;
 }
-}
+} // namespace phlipbot
