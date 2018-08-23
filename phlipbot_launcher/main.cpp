@@ -277,11 +277,16 @@ VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE cb_inst,
 
         // dll was modified -- reload the dll
         if (dll_last_modified > ctx->dll_last_modified) {
+          hadesmem::Process proc{ctx->proc_id};
+          std::wcout << "Unloading dll...\n";
+          eject_dll(proc, ctx->dll_name);
+
+          std::wcout << "Copying " << ctx->orig_dll_name << " -> "
+                     << ctx->dll_name << "\n";
           fs::copy_file(ctx->orig_dll_path, ctx->dll_path,
                         fs::copy_options::overwrite_existing);
 
           std::wcout << "Reloading dll...\n";
-          hadesmem::Process proc{ctx->proc_id};
           reload_dll(proc, ctx->dll_name);
         }
 
@@ -471,7 +476,7 @@ int handler_watch(po::variables_map const& vm)
       hadesmem::Error{} << hadesmem::ErrorString{"Dll does not exist"});
   }
 
-  ctx.dll_name = ctx.orig_dll_path.filename().wstring() + L"_copy" +
+  ctx.dll_name = ctx.orig_dll_path.stem().wstring() + L"_copy" +
                  ctx.orig_dll_path.extension().wstring();
   ctx.dll_path = dir_path / fs::path{ctx.dll_name};
 
