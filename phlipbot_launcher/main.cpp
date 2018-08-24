@@ -24,28 +24,14 @@
 #include <hadesmem/process.hpp>
 #include <hadesmem/process_helpers.hpp>
 
-
-// TODO(phlip9): cmd line interface?
-// > phlipbot_launcher inject
-// > phlipbot_launcher eject
-// > phlipbot_launcher watch
-//    events: (either just poll or use some async io library (libuv?
-//    boost::asio? windows api?))
-//      + WoW.exe process stops or dll errors => stop watching? / or restart and
-//      inject?
-//      + dll changes => eject old dll then inject new dll
-//      + launcher gets CTRL+C => eject dll and shutdown
-//
-// TODO(phlip9): watch for changes in the dll and then reinject
 // TODO(phlip9): take absolute path for dll_name
+// TODO(phlip9): move SmartHandles into hadesmem/detail/smart_handle.hpp
 
 namespace fs = std::experimental::filesystem;
 namespace po = boost::program_options;
 
-using HandlerT = std::function<int(po::variables_map const&)>;
+using CmdHandlerT = std::function<int(po::variables_map const&)>;
 
-
-// TODO(phlip9): move into hadesmem/detail/smart_handle.hpp
 
 struct CallbackEnvironmentPolicy {
   using HandleT = PTP_CALLBACK_ENVIRON;
@@ -224,20 +210,22 @@ void reload_dll(hadesmem::Process const& proc, std::wstring const& dll_name)
 
 
 struct WatchContext {
-  bool is_done = false;
+  // is_done is used from a wait callback thread to signal the main thread to
+  // cleanup and exit
   std::mutex is_done_mutex;
   std::condition_variable is_done_condvar;
-
+  bool is_done = false;
   HANDLE main_thread = nullptr;
 
+  // ensure that the file change callback is a critical section
   std::mutex watch_mutex;
   SmartChangeNotification dir_watch_handle;
-  fs::path dll_path;
-  std::wstring dll_name;
+  fs::path copy_dll_path;
+  std::wstring copy_dll_name;
   fs::path orig_dll_path;
   std::wstring orig_dll_name;
   DWORD proc_id;
-  fs::file_time_type dll_last_modified;
+  fs::file_time_type orig_dll_last_modified;
 };
 
 // TODO(phlip9): unfortunately, the signal handler takes no auxilliary arguments
@@ -250,13 +238,11 @@ WatchContext& signal_handler_get_watch_ctx() noexcept
   return watch_ctx;
 }
 
-VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE cb_inst,
+VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE /* cb_inst */,
                             PVOID param,
                             PTP_WAIT wait,
                             TP_WAIT_RESULT wait_res)
 {
-  (void)cb_inst;
-
   auto ctx = static_cast<WatchContext*>(param);
 
   std::wcout << "dir_change_cb(...)\n";
@@ -273,24 +259,25 @@ VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE cb_inst,
       std::lock_guard<std::mutex> lock{ctx->watch_mutex};
 
       if (fs::exists(ctx->orig_dll_path)) {
-        auto const dll_last_modified = fs::last_write_time(ctx->orig_dll_path);
+        auto const orig_dll_last_modified =
+          fs::last_write_time(ctx->orig_dll_path);
 
         // dll was modified -- reload the dll
-        if (dll_last_modified > ctx->dll_last_modified) {
+        if (orig_dll_last_modified > ctx->orig_dll_last_modified) {
           hadesmem::Process proc{ctx->proc_id};
           std::wcout << "Unloading dll...\n";
-          eject_dll(proc, ctx->dll_name);
+          eject_dll(proc, ctx->copy_dll_name);
 
           std::wcout << "Copying " << ctx->orig_dll_name << " -> "
-                     << ctx->dll_name << "\n";
-          fs::copy_file(ctx->orig_dll_path, ctx->dll_path,
+                     << ctx->copy_dll_name << "\n";
+          fs::copy_file(ctx->orig_dll_path, ctx->copy_dll_path,
                         fs::copy_options::overwrite_existing);
 
           std::wcout << "Reloading dll...\n";
-          reload_dll(proc, ctx->dll_name);
+          reload_dll(proc, ctx->copy_dll_name);
         }
 
-        ctx->dll_last_modified = dll_last_modified;
+        ctx->orig_dll_last_modified = orig_dll_last_modified;
       } else {
         std::wcout << "dll does not exist\n";
       }
@@ -318,20 +305,11 @@ VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE cb_inst,
   }
 }
 
-VOID CALLBACK proc_exit_cb(PTP_CALLBACK_INSTANCE cb_inst,
+VOID CALLBACK proc_exit_cb(PTP_CALLBACK_INSTANCE /* cb_inst */,
                            PVOID param,
-                           PTP_WAIT wait,
-                           TP_WAIT_RESULT wait_res)
+                           PTP_WAIT /* wait */,
+                           TP_WAIT_RESULT /* wait_res */)
 {
-  (void)cb_inst;
-  //(void)param;
-  (void)wait;
-  (void)wait_res;
-
-  // TODO(phlip9): check WaitResult parameter?
-
-  std::wcout << "Got process exit callback\n";
-
   auto ctx = static_cast<WatchContext*>(param);
 
   // Signal main thread to exit
@@ -364,8 +342,8 @@ BOOL WINAPI signal_handler(_In_ DWORD ctrl_type)
     // Try to wait for the main thread to finish cleanup, else forcefully
     // terminate if we pass the timemout threshold.
     if (ctx.main_thread != nullptr) {
-      ::WaitForSingleObject(ctx.main_thread, 30000 /* 30 sec timeout */);
-      std::wcout << "watch thread failed to complete before timeout; "
+      ::WaitForSingleObject(ctx.main_thread, 20000 /* 20 sec timeout */);
+      std::wcout << "main thread failed to complete before timeout; "
                     "terminating process.\n";
     }
 
@@ -379,7 +357,77 @@ BOOL WINAPI signal_handler(_In_ DWORD ctrl_type)
   return FALSE;
 }
 
-int handler_inject(po::variables_map const& vm)
+struct Threadpool {
+public:
+  Threadpool()
+  {
+    // Create a new threadpool with 1 thread for listening to events
+    ::InitializeThreadpoolEnvironment(&_cb_env);
+    cb_env = SmartCallbackEnvironment{&_cb_env};
+
+    pool = SmartThreadpool{::CreateThreadpool(nullptr)};
+
+    if (!pool.IsValid()) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{}
+        << hadesmem::ErrorString{"Failed to create Threadpool"}
+        << hadesmem::ErrorCodeWinLast{::GetLastError()});
+    }
+
+    ::SetThreadpoolThreadMaximum(pool.GetHandle(), 1);
+
+    if (!::SetThreadpoolThreadMinimum(pool.GetHandle(), 1)) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{} << hadesmem::ErrorString{"Failed to set min thread "
+                                                   "count"}
+                          << hadesmem::ErrorCodeWinLast{::GetLastError()});
+    }
+
+    ::SetThreadpoolCallbackPool(cb_env.GetHandle(), pool.GetHandle());
+  }
+
+  ~Threadpool() = default;
+
+  Threadpool(Threadpool const& other) = delete;
+  Threadpool(Threadpool&& other) noexcept = delete;
+  Threadpool& operator=(Threadpool const& other) = delete;
+  Threadpool& operator=(Threadpool&& other) noexcept = delete;
+
+  void RegisterWait(HANDLE event_handle, PTP_WAIT_CALLBACK cb, void* cb_data)
+  {
+    auto wait = SmartThreadpoolWait{
+      ::CreateThreadpoolWait(cb, cb_data, cb_env.GetHandle())};
+
+    if (!wait.IsValid()) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{}
+        << hadesmem::ErrorString{"Failed to create wait object"}
+        << hadesmem::ErrorCodeWinLast{::GetLastError()});
+    }
+
+    ::SetThreadpoolWait(wait.GetHandle(), event_handle, nullptr);
+
+    waiters.emplace_back(std::move(wait));
+  }
+
+  // block until all active wait callbacks complete
+  void WaitForCallbacks()
+  {
+    for (auto const& wait : waiters) {
+      ::WaitForThreadpoolWaitCallbacks(
+        wait.GetHandle(), FALSE /* don't cancel pending callbacks */);
+    }
+  }
+
+  TP_CALLBACK_ENVIRON _cb_env;
+  SmartCallbackEnvironment cb_env;
+  SmartThreadpool pool;
+
+  std::vector<SmartThreadpoolWait> waiters;
+};
+
+
+int cmd_handler_inject(po::variables_map const& vm)
 {
   // need privileges to inject
   hadesmem::GetSeDebugPrivilege();
@@ -420,7 +468,7 @@ int handler_inject(po::variables_map const& vm)
   return 0;
 }
 
-int handler_eject(po::variables_map const& vm)
+int cmd_handler_eject(po::variables_map const& vm)
 {
   // need privileges to eject
   hadesmem::GetSeDebugPrivilege();
@@ -442,14 +490,8 @@ int handler_eject(po::variables_map const& vm)
   return 0;
 }
 
-int handler_watch(po::variables_map const& vm)
+int cmd_handler_watch(po::variables_map const& vm)
 {
-  // Use the global as the source of truth, but always try to pass it as a
-  // parameter to handlers that accept parameters.
-  auto& ctx = signal_handler_get_watch_ctx();
-  // add this thread so the signal handler can wait for cleanup to complete
-  ctx.main_thread = ::GetCurrentThread();
-
   // need privileges to inject/eject
   hadesmem::GetSeDebugPrivilege();
 
@@ -463,8 +505,15 @@ int handler_watch(po::variables_map const& vm)
     return 1;
   }
 
+  std::wcout << "Process id = " << o_proc->GetId() << "\n";
+
+  // Use the global as the source of truth, but always try to pass it as a
+  // parameter to handlers that accept parameters.
+  WatchContext& ctx = signal_handler_get_watch_ctx();
+
+  // add this thread so the signal handler can wait for cleanup to complete
+  ctx.main_thread = ::GetCurrentThread();
   ctx.proc_id = o_proc->GetId();
-  std::wcout << "Process id = " << ctx.proc_id << "\n";
 
   auto const dir_path = fs::absolute(hadesmem::detail::GetSelfDirPath());
 
@@ -476,88 +525,27 @@ int handler_watch(po::variables_map const& vm)
       hadesmem::Error{} << hadesmem::ErrorString{"Dll does not exist"});
   }
 
-  ctx.dll_name = ctx.orig_dll_path.stem().wstring() + L"_copy" +
-                 ctx.orig_dll_path.extension().wstring();
-  ctx.dll_path = dir_path / fs::path{ctx.dll_name};
+  ctx.copy_dll_name = ctx.orig_dll_path.stem().wstring() + L"_copy" +
+                      ctx.orig_dll_path.extension().wstring();
+  ctx.copy_dll_path = dir_path / fs::path{ctx.copy_dll_name};
 
   // create a copy of the dll and inject the copy instead of the original
   // so the build system can actually write the dll target
-  fs::copy_file(ctx.orig_dll_path, ctx.dll_path,
+  fs::copy_file(ctx.orig_dll_path, ctx.copy_dll_path,
                 fs::copy_options::overwrite_existing);
 
-  std::wcout << "dir_path = " << dir_path << "\n";
-  std::wcout << "dll_path = " << ctx.dll_path << "\n";
-  std::wcout << "orig_dll_path = " << ctx.orig_dll_path << "\n";
-
-  if (!fs::exists(ctx.dll_path)) {
+  if (!fs::exists(ctx.copy_dll_path)) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{} << hadesmem::ErrorString{"Failed to copy dll"});
   }
 
-  ctx.dll_last_modified = fs::last_write_time(ctx.orig_dll_path);
-  auto const ctime =
-    decltype(ctx.dll_last_modified)::clock::to_time_t(ctx.dll_last_modified);
+  // record the last modified time so we know when the dll has been rebuilt
+  ctx.orig_dll_last_modified = fs::last_write_time(ctx.orig_dll_path);
 
-  std::wcout << "dll last modified = " << std::asctime(std::localtime(&ctime))
-             << "\n";
-
+  // eject both phlipbot.dll and phlipbot_copy.dll (if either are injected) and
+  // then load phlipbot_copy.dll
   eject_dll(*o_proc, ctx.orig_dll_name);
-  reload_dll(*o_proc, ctx.dll_name);
-
-  // Create a new threadpool with 1 thread for listening to events
-  TP_CALLBACK_ENVIRON _cb_env;
-  ::InitializeThreadpoolEnvironment(&_cb_env);
-  auto const cb_env = SmartCallbackEnvironment{&_cb_env};
-
-  auto const pool = SmartThreadpool{::CreateThreadpool(nullptr)};
-
-  if (!pool.IsValid()) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to create Threadpool"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
-  }
-
-  ::SetThreadpoolThreadMaximum(pool.GetHandle(), 1);
-
-  if (!::SetThreadpoolThreadMinimum(pool.GetHandle(), 1)) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to set min thread "
-                                                 "count"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
-  }
-
-  ::SetThreadpoolCallbackPool(cb_env.GetHandle(), pool.GetHandle());
-
-  auto const group = SmartCleanupGroup{::CreateThreadpoolCleanupGroup()};
-
-  if (!group.IsValid()) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to create cleanup "
-                                                 "group"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
-  }
-
-  ::SetThreadpoolCallbackCleanupGroup(cb_env.GetHandle(), group.GetHandle(),
-                                      nullptr);
-
-
-  // Set callback on WoW.exe process exit
-
-  auto const proc_wait = SmartThreadpoolWait{
-    ::CreateThreadpoolWait(proc_exit_cb, &ctx, cb_env.GetHandle())};
-
-  if (!proc_wait.IsValid()) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to create proc_wait"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
-  }
-
-  ::SetThreadpoolWait(proc_wait.GetHandle(), o_proc->GetHandle(), nullptr);
-  std::wcout << "Waiting on WoW.exe process exit\n";
-
-  ::SetConsoleCtrlHandler(signal_handler, TRUE);
-  std::wcout << "Waiting on process signal\n";
-
+  reload_dll(*o_proc, ctx.copy_dll_name);
 
   // register for change notifications to the launcher directory
   ctx.dir_watch_handle = SmartChangeNotification{::FindFirstChangeNotificationW(
@@ -571,44 +559,39 @@ int handler_watch(po::variables_map const& vm)
                         << hadesmem::ErrorCodeWinLast{::GetLastError()});
   }
 
-  // register the change notifications with the thread pool
-  auto const dir_watch_wait = SmartThreadpoolWait{
-    ::CreateThreadpoolWait(dir_change_cb, &ctx, cb_env.GetHandle())};
 
-  if (!dir_watch_wait.IsValid()) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to create "
-                                                 "dir_watch_wait"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
-  }
+  // Create a new threadpool with 1 thread for listening to events
+  Threadpool thread_pool;
 
-  ::SetThreadpoolWait(dir_watch_wait.GetHandle(),
-                      ctx.dir_watch_handle.GetHandle(), nullptr);
-  std::wcout << "Waiting on file changes\n";
+  ::SetConsoleCtrlHandler(signal_handler, TRUE);
+  std::wcout << "Waiting on process signals...\n";
 
-  // wait until ctx.is_done flag is triggered
+  thread_pool.RegisterWait(o_proc->GetHandle(), proc_exit_cb, &ctx);
+  std::wcout << "Waiting on WoW.exe process exit...\n";
+
+  thread_pool.RegisterWait(ctx.dir_watch_handle.GetHandle(), dir_change_cb,
+                           &ctx);
+  std::wcout << "Waiting on file changes...\n";
+
+  // wait until ctx.is_done flag is triggered from one of the pool threads
   {
     std::unique_lock<std::mutex> lock{ctx.is_done_mutex};
     ctx.is_done_condvar.wait(lock, [&ctx] { return ctx.is_done; });
   }
 
-  // block until all active wait callbacks complete
-  ::WaitForThreadpoolWaitCallbacks(dir_watch_wait.GetHandle(),
-                                   FALSE /* cancel pending callbacks */);
-  ::WaitForThreadpoolWaitCallbacks(proc_wait.GetHandle(),
-                                   FALSE /* cancel pending callbacks */);
+  thread_pool.WaitForCallbacks();
 
-  eject_dll(*o_proc, ctx.dll_name);
+  eject_dll(*o_proc, ctx.copy_dll_name);
 
   return 0;
 }
 
 int main_inner(int argc, wchar_t** argv)
 {
-  std::map<std::wstring, HandlerT> const cmd_handlers{
-    {L"inject", handler_inject},
-    {L"eject", handler_eject},
-    {L"watch", handler_watch}};
+  std::map<std::wstring, CmdHandlerT> const cmd_handlers{
+    {L"inject", cmd_handler_inject},
+    {L"eject", cmd_handler_eject},
+    {L"watch", cmd_handler_watch}};
 
   po::options_description desc("phlipbot_launcher [inject|eject|watch]");
   auto add = desc.add_options();
@@ -617,11 +600,12 @@ int main_inner(int argc, wchar_t** argv)
     "dll,d",
     po::wvalue<std::wstring>()->default_value(L"phlipbot.dll", "phlipbot.dll"),
     "filename or path to the dll");
-  add("pid,p", po::value<int>(), "the target process pid");
+  add("pid,p", po::value<int>(), "target process pid");
   add("pname,n",
       po::wvalue<std::wstring>()->default_value(L"WoW.exe", "WoW.exe"),
-      "the target process name");
-  add("command", po::wvalue<std::wstring>(), "inject|eject|watch");
+      "target process name");
+  add("command", po::wvalue<std::wstring>()->default_value(L"watch", "watch"),
+      "inject|eject|watch");
 
   po::positional_options_description pos_desc;
   pos_desc.add("command", 1);
@@ -648,9 +632,8 @@ int main_inner(int argc, wchar_t** argv)
       return 1;
     }
 
-    auto const& handler = cmd_handlers.at(command);
-
-    return handler(vm);
+    auto const& cmd_handler = cmd_handlers.at(command);
+    return cmd_handler(vm);
   }
 
   std::wcerr << "Error: missing command\n\n";
