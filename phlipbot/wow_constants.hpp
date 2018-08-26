@@ -94,15 +94,18 @@ enum class MovementOpCode : uint32_t
   strafeStop        = 0xBA,
 };
 
-enum class ControlBits : uint32_t
+namespace InputControlFlags
 {
-  Front   = 0x10,
-  CtmWalk = 0x1,
-  AutoRun = 0x1000,
-  Right   = 0x200,
-  Left    = 0x100,
-  Back    = 0x20,
-};
+uint32_t const
+  CtmWalk     = 0x0001,
+  Forward     = 0x0010,
+  Backward    = 0x0020,
+  StrafeLeft  = 0x0040,
+  StrafeRight = 0x0080,
+  TurnLeft    = 0x0100,
+  TurnRight   = 0x0200,
+  AutoRun     = 0x1000;
+}
 
 enum class ChatType : uint32_t
 {

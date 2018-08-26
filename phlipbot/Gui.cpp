@@ -62,45 +62,90 @@ void Gui::Render()
   ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
 
   if (ImGui::Begin("phlipbot")) {
-    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 
-    if (ImGui::Button("Dump Objects")) {
-      auto& objmgr = ObjectManager::Get();
-      objmgr.EnumVisibleObjects();
+    if (ImGui::CollapsingHeader("ObjectManager Testing")) {
+      if (ImGui::Button("Dump Objects")) {
+        auto& objmgr = ObjectManager::Get();
+        objmgr.EnumVisibleObjects();
 
-      for (auto obj : objmgr.IterAllObjs()) {
-        HADESMEM_DETAIL_TRACE_A(obj->ToString().c_str());
+        for (auto obj : objmgr.IterAllObjs()) {
+          HADESMEM_DETAIL_TRACE_A(obj->ToString().c_str());
+        }
       }
     }
 
-    ImGui::SliderFloat("CTM dX", &ctm_dx, -30.0f, 30.0f);
-    ImGui::SliderFloat("CTM dY", &ctm_dy, -30.0f, 30.0f);
-    ImGui::SliderFloat("CTM Precision", &ctm_precision, 0.0f, 10.0f);
+    if (ImGui::CollapsingHeader("Movement Testing")) {
+      ImGui::SliderFloat("CTM dX", &ctm_dx, -30.0f, 30.0f);
+      ImGui::SliderFloat("CTM dY", &ctm_dy, -30.0f, 30.0f);
+      ImGui::SliderFloat("CTM Precision", &ctm_precision, 0.0f, 10.0f);
 
-    // ImGui::Checkbox("Toggle CTM", &ctm_toggle);
-    // if (ctm_toggle) {
-    if (ImGui::Button("Test CTM")) {
-      auto& objmgr = ObjectManager::Get();
-      objmgr.EnumVisibleObjects();
-      auto const o_player = objmgr.GetPlayer();
-      if (o_player.has_value()) {
-        auto player = o_player.get();
-        auto player_pos = player->GetPosition();
-        player_pos.X += ctm_dx;
-        player_pos.Y += ctm_dy;
-        player->ClickToMove(CtmType::Move, 0, player_pos, ctm_precision);
+      if (ImGui::Button("Test CTM")) {
+        auto& objmgr = ObjectManager::Get();
+        objmgr.EnumVisibleObjects();
+        auto const o_player = objmgr.GetPlayer();
+        if (o_player.has_value()) {
+          auto player = o_player.get();
+          auto player_pos = player->GetPosition();
+          player_pos.X += ctm_dx;
+          player_pos.Y += ctm_dy;
+          player->ClickToMove(CtmType::Move, 0, player_pos, ctm_precision);
+        }
       }
-    }
 
-    ImGui::SliderFloat("Facing", &player_facing, 0.0f, 6.282f);
-    ImGui::SameLine();
-    if (ImGui::Button("SetFacing")) {
-      auto& objmgr = ObjectManager::Get();
-      objmgr.EnumVisibleObjects();
-      auto const o_player = objmgr.GetPlayer();
-      if (o_player.has_value()) {
-        auto player = o_player.get();
-        player->SetFacing(player_facing);
+      ImGui::SliderFloat("Facing", &player_facing, 0.0f, 6.282f);
+      ImGui::SameLine();
+      if (ImGui::Button("SetFacing")) {
+        auto& objmgr = ObjectManager::Get();
+        objmgr.EnumVisibleObjects();
+        auto const o_player = objmgr.GetPlayer();
+        if (o_player.has_value()) {
+          auto player = o_player.get();
+          player->SetFacing(player_facing);
+        }
+      }
+
+      ImGui::CheckboxFlags("CtmWalk", &input_flags, InputControlFlags::CtmWalk);
+      ImGui::SameLine();
+      ImGui::CheckboxFlags("Forward", &input_flags, InputControlFlags::Forward);
+      ImGui::SameLine();
+      ImGui::CheckboxFlags("Backward", &input_flags,
+                           InputControlFlags::Backward);
+      ImGui::SameLine();
+      ImGui::CheckboxFlags("Strafe Left", &input_flags,
+                           InputControlFlags::StrafeLeft);
+
+      ImGui::CheckboxFlags("Strafe Right", &input_flags,
+                           InputControlFlags::StrafeRight);
+      ImGui::SameLine();
+      ImGui::CheckboxFlags("Turn Left", &input_flags,
+                           InputControlFlags::TurnLeft);
+      ImGui::SameLine();
+      ImGui::CheckboxFlags("Turn Right", &input_flags,
+                           InputControlFlags::TurnRight);
+
+      ImGui::CheckboxFlags("Auto Run", &input_flags,
+                           InputControlFlags::AutoRun);
+      ImGui::SameLine();
+      ImGui::CheckboxFlags("All Flags", &input_flags, 0xFFFFFFFF);
+
+      if (ImGui::Button("SetControlBits")) {
+        auto& objmgr = ObjectManager::Get();
+        objmgr.EnumVisibleObjects();
+        auto const o_player = objmgr.GetPlayer();
+        if (o_player.has_value()) {
+          auto player = o_player.get();
+          player->SetControlBits(input_flags, ::GetTickCount());
+        }
+      }
+
+      if (ImGui::Button("UnsetControlBits")) {
+        auto& objmgr = ObjectManager::Get();
+        objmgr.EnumVisibleObjects();
+        auto const o_player = objmgr.GetPlayer();
+        if (o_player.has_value()) {
+          auto player = o_player.get();
+          player->UnsetControlBits(input_flags, ::GetTickCount());
+        }
       }
     }
   }

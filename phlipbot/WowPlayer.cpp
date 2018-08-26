@@ -32,6 +32,23 @@ using CUnit_C__SendMovementUpdate_Fn = void(__thiscall*)(uintptr_t player,
                                                          float _unk,
                                                          uint32_t __unk);
 
+using CGInputControl__GetActive_Fn = uintptr_t(__stdcall*)();
+using CGInputControl__SetControlBit_Fn =
+  uint32_t(__thiscall*)(uintptr_t input_ctrl_ptr,
+                        uint32_t control_flags,
+                        uint32_t state,
+                        uint32_t timestamp,
+                        uint32_t sticky);
+
+
+static inline uintptr_t CGInputControl__GetActive()
+{
+  auto const get_active_fn = reinterpret_cast<CGInputControl__GetActive_Fn>(
+    phlipbot::offsets::Functions::CGInputControl__GetActive);
+
+  return (get_active_fn)();
+}
+
 namespace phlipbot
 {
 std::string WowPlayer::GetName() const
@@ -128,5 +145,27 @@ bool WowPlayer::ClickToMove(CtmType const ctm_type,
 
   return (ctm_fn)(base_ptr, static_cast<uint32_t>(ctm_type), &target_guid,
                   &target_pos, precision);
+}
+
+uint32_t WowPlayer::SetControlBits(uint32_t control_flags, uint32_t timestamp)
+{
+  auto const set_ctrl_bit_fn =
+    reinterpret_cast<CGInputControl__SetControlBit_Fn>(
+      offsets::Functions::CGInputControl__SetControlBit);
+
+  auto const input_ctrl_ptr = CGInputControl__GetActive();
+
+  return (set_ctrl_bit_fn)(input_ctrl_ptr, control_flags, 1, timestamp, 0);
+}
+
+uint32_t WowPlayer::UnsetControlBits(uint32_t control_flags, uint32_t timestamp)
+{
+  auto const set_ctrl_bit_fn =
+    reinterpret_cast<CGInputControl__SetControlBit_Fn>(
+      offsets::Functions::CGInputControl__SetControlBit);
+
+  auto const input_ctrl_ptr = CGInputControl__GetActive();
+
+  return (set_ctrl_bit_fn)(input_ctrl_ptr, control_flags, 0, timestamp, 0);
 }
 }

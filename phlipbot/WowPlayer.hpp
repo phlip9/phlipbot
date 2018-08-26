@@ -28,5 +28,8 @@ public:
                    types::Guid const target_guid,
                    types::XYZ const& target_pos,
                    float const precision = 2.0f);
+
+  uint32_t SetControlBits(uint32_t flags, uint32_t timestamp);
+  uint32_t UnsetControlBits(uint32_t flags, uint32_t timestamp);
 };
 }
