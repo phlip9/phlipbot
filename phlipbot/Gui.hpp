@@ -2,6 +2,7 @@
 
 #include <Shlwapi.h>
 #include <d3d9.h>
+#include <stdint.h>
 
 namespace phlipbot
 {
@@ -23,5 +24,11 @@ public:
   void Shutdown();
 
   bool is_initialized{false};
+
+  float player_facing = 0.0f;
+  float ctm_precision = 2.0f;
+  bool ctm_toggle = false;
+  float ctm_dx = 0.0f;
+  float ctm_dy = 0.0f;
 };
 }

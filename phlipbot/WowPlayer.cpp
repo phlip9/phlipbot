@@ -1,15 +1,36 @@
 #include "WowPlayer.hpp"
 
+#include <Windows.h>
 #include <iomanip>
 #include <iostream>
+#include <math.h>
 #include <stdint.h>
 #include <string>
+
+#include <boost/math/constants/constants.hpp>
+
+#include <hadesmem/detail/trace.hpp>
 
 #include "memory.hpp"
 #include "wow_constants.hpp"
 
 using namespace phlipbot::types;
 using namespace phlipbot::offsets::Data;
+
+using CGPlayer_C__ClickToMove_Fn = char(__thiscall*)(uintptr_t player,
+                                                     uint32_t const ctm_type,
+                                                     Guid const* target_guid,
+                                                     XYZ const* target_pos,
+                                                     float const precision);
+
+using CMovement__SetFacing_Fn = uint32_t(__thiscall*)(uintptr_t cmovement_data,
+                                                      float const facing);
+
+using CUnit_C__SendMovementUpdate_Fn = void(__thiscall*)(uintptr_t player,
+                                                         uint32_t timestamp,
+                                                         uint32_t opcode,
+                                                         float _unk,
+                                                         uint32_t __unk);
 
 namespace phlipbot
 {
@@ -56,5 +77,56 @@ void WowPlayer::PrintToStream(std::ostream& os) const
   os << ", movement_flags: " << std::setw(8) << GetMovementFlags();
   os << ", dynamic_flags: " << std::setw(8) << GetDynamicFlags();
   os << " }";
+}
+
+void WowPlayer::SendUpdateMovement(uint32_t timestamp, MovementOpCode opcode)
+{
+  auto const send_movement_fn =
+    reinterpret_cast<CUnit_C__SendMovementUpdate_Fn>(
+      offsets::Functions::CUnit_C__SendMovementUpdate);
+
+  auto const _opcode = static_cast<uint32_t>(opcode);
+
+  (send_movement_fn)(base_ptr, timestamp, _opcode, 0.0f, 0);
+}
+
+void WowPlayer::SetFacing(float facing_rad)
+{
+  uintptr_t cmovement_data =
+    base_ptr + static_cast<ptrdiff_t>(offsets::Descriptors::Unit_MovementC);
+
+  auto const set_facing_fn = reinterpret_cast<CMovement__SetFacing_Fn>(
+    offsets::Functions::CMovement__SetFacing);
+
+  (set_facing_fn)(cmovement_data, facing_rad);
+}
+
+void WowPlayer::SetFacing(XYZ const& target_pos)
+{
+  using namespace boost::math::float_constants;
+
+  auto const pos = GetPosition();
+  float const dy = target_pos.Y - pos.Y;
+  float const dx = target_pos.X - pos.X;
+
+  float const facing_rad = pi - std::atan2f(dy, -dx);
+
+  SetFacing(facing_rad);
+
+  SendUpdateMovement(::GetTickCount(), MovementOpCode::setFacing);
+}
+
+bool WowPlayer::ClickToMove(CtmType const ctm_type,
+                            Guid const target_guid,
+                            XYZ const& target_pos,
+                            float const precision)
+{
+  auto const ctm_fn = reinterpret_cast<CGPlayer_C__ClickToMove_Fn>(
+    offsets::Functions::CGPlayer_C__ClickToMove);
+
+  SetFacing(target_pos);
+
+  return (ctm_fn)(base_ptr, static_cast<uint32_t>(ctm_type), &target_guid,
+                  &target_pos, precision);
 }
 }
