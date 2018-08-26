@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  * Copyright (C) 2009-2011 MaNGOSZero <https://github.com/mangos/zero>
@@ -19,11 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MANGOSSERVER_WORLDPACKET_H
-#define MANGOSSERVER_WORLDPACKET_H
+#include <stdint.h>
 
-#include "ByteBuffer.h"
-#include "Common.h"
+#include "ByteBuffer.hpp"
 
 // Note: m_opcode and size stored in platfom dependent format
 // ignore endianess until send, and converted at receive
@@ -32,7 +32,7 @@ class WorldPacket : public ByteBuffer
 public:
   // just container for later use
   WorldPacket() : ByteBuffer(0), m_opcode(0), m_recvdTime(0) {}
-  explicit WorldPacket(uint16 opcode, size_t res = 200)
+  explicit WorldPacket(uint16_t opcode, size_t res = 200)
     : ByteBuffer(res), m_opcode(opcode), m_recvdTime(0)
   {
   }
@@ -57,21 +57,20 @@ public:
     return *this;
   }
 
-  void Initialize(uint16 opcode, size_t newres = 200)
+  void Initialize(uint16_t opcode, size_t newres = 200)
   {
     clear();
     _storage.reserve(newres);
     m_opcode = opcode;
   }
 
-  uint16 GetOpcode() const { return m_opcode; }
-  void SetOpcode(uint16 opcode) { m_opcode = opcode; }
+  uint16_t GetOpcode() const { return m_opcode; }
+  void SetOpcode(uint16_t opcode) { m_opcode = opcode; }
 
-  uint32 GetPacketTime() const { return m_recvdTime; }
-  void FillPacketTime(uint32 t) { m_recvdTime = t; }
+  uint32_t GetPacketTime() const { return m_recvdTime; }
+  void FillPacketTime(uint32_t t) { m_recvdTime = t; }
 
 protected:
-  uint16 m_opcode;
-  uint32 m_recvdTime;
+  uint16_t m_opcode;
+  uint32_t m_recvdTime;
 };
-#endif

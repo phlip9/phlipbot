@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  * Copyright (C) 2009-2011 MaNGOSZero <https://github.com/mangos/zero>
@@ -19,15 +21,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MANGOS_BYTECONVERTER_H
-#define MANGOS_BYTECONVERTER_H
-
 /** ByteConverter reverse your byte order.  This is use
     for cross platform where they have different endians.
  */
 
-#include <Platform/Define.h>
 #include <algorithm>
+#include <stdint.h>
+
+// Compile-time test for endianness
+// (though compiling on windows, we're always going to be little endian)
+// TODO(phlip9): probably better solution
+// http://esr.ibiblio.org/?p=5095
+// https://godbolt.org/z/qMXiAp
+#define IS_BIG_ENDIAN (*(uint32_t*)"\x00\x00\x00\xFF" < 0x00000100)
 
 namespace ByteConverter
 {
@@ -52,38 +58,29 @@ inline void apply(T* val)
 {
   convert<sizeof(T)>((char*)(val));
 }
-}
 
-#if MANGOS_ENDIAN == MANGOS_BIGENDIAN
-template <typename T>
-inline void EndianConvert(T& val)
-{
-  ByteConverter::apply<T>(&val);
-}
-template <typename T>
-inline void EndianConvertReverse(T&)
-{
-}
-#else
 template <typename T>
 inline void EndianConvert(T&)
 {
+  if (IS_BIG_ENDIAN) {
+    apply<T>(&val);
+  }
 }
 template <typename T>
 inline void EndianConvertReverse(T& val)
 {
-  ByteConverter::apply<T>(&val);
+  if (!IS_BIG_ENDIAN) {
+    apply<T>(&val);
+  }
 }
-#endif
 
 template <typename T>
 void EndianConvert(T*); // will generate link error
 template <typename T>
 void EndianConvertReverse(T*); // will generate link error
 
-inline void EndianConvert(uint8&) {}
-inline void EndianConvert(int8&) {}
-inline void EndianConvertReverse(uint8&) {}
-inline void EndianConvertReverse(int8&) {}
-
-#endif
+inline void EndianConvert(uint8_t&) {}
+inline void EndianConvert(int8_t&) {}
+inline void EndianConvertReverse(uint8_t&) {}
+inline void EndianConvertReverse(int8_t&) {}
+}

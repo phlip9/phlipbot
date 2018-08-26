@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  * Copyright (C) 2009-2011 MaNGOSZero <https://github.com/mangos/zero>
@@ -19,35 +21,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _BYTEBUFFER_H
-#define _BYTEBUFFER_H
+#include <map>
+#include <ostream>
+#include <stdint.h>
+#include <string>
+#include <vector>
 
-#include "Common.h"
-#include "Log.h"
-#include "Utilities/ByteConverter.h"
+#include <hadesmem/detail/assert.hpp>
+#include <hadesmem/detail/trace.hpp>
+#include <hadesmem/error.hpp>
 
-class ByteBufferException
-{
-public:
-  ByteBufferException(bool _add, size_t _pos, size_t _esize, size_t _size)
-    : add(_add), pos(_pos), esize(_esize), size(_size)
-  {
-    PrintPosError();
-  }
+#include "ByteConverter.hpp"
 
-  void PrintPosError() const
-  {
-    sLog.outError("Attempted to %s in ByteBuffer (pos: " SIZEFMTD
-                  " size: " SIZEFMTD ") value with size: " SIZEFMTD,
-                  (add ? "put" : "get"), pos, size, esize);
-  }
-
-private:
-  bool add;
-  size_t pos;
-  size_t esize;
-  size_t size;
-};
+using ErrorBufferOp = boost::error_info<struct TagErrorBufferOp, std::string>;
+using ErrorBufferPos = boost::error_info<struct TagErrorBufferPos, size_t>;
+using ErrorBufferSize = boost::error_info<struct TagErrorBufferSize, size_t>;
+using ErrorBufferItemSize =
+  boost::error_info<struct TagErrorBufferItemSize, size_t>;
 
 template <class T>
 struct Unused {
@@ -95,56 +85,56 @@ public:
   template <typename T>
   void put(size_t pos, T value)
   {
-    EndianConvert(value);
-    put(pos, (uint8*)&value, sizeof(value));
+    ByteConverter::EndianConvert(value);
+    put(pos, (uint8_t*)&value, sizeof(value));
   }
 
-  ByteBuffer& operator<<(uint8 value)
+  ByteBuffer& operator<<(uint8_t value)
   {
-    append<uint8>(value);
+    append<uint8_t>(value);
     return *this;
   }
 
-  ByteBuffer& operator<<(uint16 value)
+  ByteBuffer& operator<<(uint16_t value)
   {
-    append<uint16>(value);
+    append<uint16_t>(value);
     return *this;
   }
 
-  ByteBuffer& operator<<(uint32 value)
+  ByteBuffer& operator<<(uint32_t value)
   {
-    append<uint32>(value);
+    append<uint32_t>(value);
     return *this;
   }
 
-  ByteBuffer& operator<<(uint64 value)
+  ByteBuffer& operator<<(uint64_t value)
   {
-    append<uint64>(value);
+    append<uint64_t>(value);
     return *this;
   }
 
   // signed as in 2e complement
-  ByteBuffer& operator<<(int8 value)
+  ByteBuffer& operator<<(int8_t value)
   {
-    append<int8>(value);
+    append<int8_t>(value);
     return *this;
   }
 
-  ByteBuffer& operator<<(int16 value)
+  ByteBuffer& operator<<(int16_t value)
   {
-    append<int16>(value);
+    append<int16_t>(value);
     return *this;
   }
 
-  ByteBuffer& operator<<(int32 value)
+  ByteBuffer& operator<<(int32_t value)
   {
-    append<int32>(value);
+    append<int32_t>(value);
     return *this;
   }
 
-  ByteBuffer& operator<<(int64 value)
+  ByteBuffer& operator<<(int64_t value)
   {
-    append<int64>(value);
+    append<int64_t>(value);
     return *this;
   }
 
@@ -163,21 +153,21 @@ public:
 
   ByteBuffer& operator<<(const std::string& value)
   {
-    append((uint8 const*)value.c_str(), value.length());
-    append((uint8)0);
+    append((uint8_t const*)value.c_str(), value.length());
+    append((uint8_t)0);
     return *this;
   }
 
   ByteBuffer& operator<<(const char* str)
   {
-    append((uint8 const*)str, str ? strlen(str) : 0);
-    append((uint8)0);
+    append((uint8_t const*)str, str ? strlen(str) : 0);
+    append((uint8_t)0);
     return *this;
   }
 
   ByteBuffer& operator<<(bool const& val)
   {
-    append((uint8 const*)&val, 1);
+    append((uint8_t const*)&val, 1);
     return *this;
   }
 
@@ -187,52 +177,52 @@ public:
     return *this;
   }
 
-  ByteBuffer& operator>>(uint8& value)
+  ByteBuffer& operator>>(uint8_t& value)
   {
-    value = read<uint8>();
+    value = read<uint8_t>();
     return *this;
   }
 
-  ByteBuffer& operator>>(uint16& value)
+  ByteBuffer& operator>>(uint16_t& value)
   {
-    value = read<uint16>();
+    value = read<uint16_t>();
     return *this;
   }
 
-  ByteBuffer& operator>>(uint32& value)
+  ByteBuffer& operator>>(uint32_t& value)
   {
-    value = read<uint32>();
+    value = read<uint32_t>();
     return *this;
   }
 
-  ByteBuffer& operator>>(uint64& value)
+  ByteBuffer& operator>>(uint64_t& value)
   {
-    value = read<uint64>();
+    value = read<uint64_t>();
     return *this;
   }
 
   // signed as in 2e complement
-  ByteBuffer& operator>>(int8& value)
+  ByteBuffer& operator>>(int8_t& value)
   {
-    value = read<int8>();
+    value = read<int8_t>();
     return *this;
   }
 
-  ByteBuffer& operator>>(int16& value)
+  ByteBuffer& operator>>(int16_t& value)
   {
-    value = read<int16>();
+    value = read<int16_t>();
     return *this;
   }
 
-  ByteBuffer& operator>>(int32& value)
+  ByteBuffer& operator>>(int32_t& value)
   {
-    value = read<int32>();
+    value = read<int32_t>();
     return *this;
   }
 
-  ByteBuffer& operator>>(int64& value)
+  ByteBuffer& operator>>(int64_t& value)
   {
-    value = read<int64>();
+    value = read<int64_t>();
     return *this;
   }
 
@@ -268,7 +258,7 @@ public:
   }
 
 
-  uint8 operator[](size_t pos) const { return read<uint8>(pos); }
+  uint8_t operator[](size_t pos) const { return read<uint8_t>(pos); }
 
   size_t rpos() const { return _rpos; }
 
@@ -294,8 +284,12 @@ public:
 
   void read_skip(size_t skip)
   {
-    if (_rpos + skip > size())
-      throw ByteBufferException(false, _rpos, skip, size());
+    if (_rpos + skip > size()) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{} << ErrorBufferOp{"read"} << ErrorBufferPos{_rpos}
+                          << ErrorBufferSize{size()}
+                          << ErrorBufferItemSize{skip});
+    }
     _rpos += skip;
   }
 
@@ -312,39 +306,48 @@ public:
   template <typename T>
   T read(size_t pos) const
   {
-    if (pos + sizeof(T) > size())
-      throw ByteBufferException(false, pos, sizeof(T), size());
+    if (pos + sizeof(T) > size()) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{} << ErrorBufferOp{"read"} << ErrorBufferPos{pos}
+                          << ErrorBufferSize{size()}
+                          << ErrorBufferItemSize{sizeof(T)});
+    }
+    // throw ByteBufferException(false, pos, sizeof(T), size());
     T val = *((T const*)&_storage[pos]);
-    EndianConvert(val);
+    ByteConverter::EndianConvert(val);
     return val;
   }
 
-  void read(uint8* dest, size_t len)
+  void read(uint8_t* dest, size_t len)
   {
-    if (_rpos + len > size())
-      throw ByteBufferException(false, _rpos, len, size());
+    if (_rpos + len > size()) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{} << ErrorBufferOp{"read"} << ErrorBufferPos{_rpos}
+                          << ErrorBufferSize{size()}
+                          << ErrorBufferItemSize{len});
+    }
     memcpy(dest, &_storage[_rpos], len);
     _rpos += len;
   }
 
-  uint64 readPackGUID()
+  uint64_t readPackGUID()
   {
-    uint64 guid = 0;
-    uint8 guidmark = 0;
+    uint64_t guid = 0;
+    uint8_t guidmark = 0;
     (*this) >> guidmark;
 
     for (int i = 0; i < 8; ++i) {
-      if (guidmark & (uint8(1) << i)) {
-        uint8 bit;
+      if (guidmark & (uint8_t(1) << i)) {
+        uint8_t bit;
         (*this) >> bit;
-        guid |= (uint64(bit) << (i * 8));
+        guid |= (uint64_t(bit) << (i * 8));
       }
     }
 
     return guid;
   }
 
-  const uint8* contents() const { return &_storage[0]; }
+  const uint8_t* contents() const { return &_storage[0]; }
 
   size_t size() const { return _storage.size(); }
   bool empty() const { return _storage.empty(); }
@@ -363,30 +366,30 @@ public:
 
   void append(const std::string& str)
   {
-    append((uint8 const*)str.c_str(), str.size() + 1);
+    append((uint8_t const*)str.c_str(), str.size() + 1);
   }
 
-  void append(const std::vector<uint8>& src)
+  void append(const std::vector<uint8_t>& src)
   {
     return append(src.data(), src.size());
   }
 
   void append(const char* src, size_t cnt)
   {
-    return append((const uint8*)src, cnt);
+    return append((const uint8_t*)src, cnt);
   }
 
   template <class T>
   void append(const T* src, size_t cnt)
   {
-    return append((const uint8*)src, cnt * sizeof(T));
+    return append((const uint8_t*)src, cnt * sizeof(T));
   }
 
-  void append(const uint8* src, size_t cnt)
+  void append(const uint8_t* src, size_t cnt)
   {
     if (!cnt) return;
 
-    MANGOS_ASSERT(size() < 10000000);
+    HADESMEM_DETAIL_ASSERT(size() < 10000000);
 
     if (_storage.size() < _wpos + cnt) _storage.resize(_wpos + cnt);
     memcpy(&_storage[_wpos], src, cnt);
@@ -398,15 +401,15 @@ public:
     if (buffer.wpos()) append(buffer.contents(), buffer.wpos());
   }
 
-  void appendPackGUID(uint64 guid)
+  void appendPackGUID(uint64_t guid)
   {
-    uint8 packGUID[8 + 1];
+    uint8_t packGUID[8 + 1];
     packGUID[0] = 0;
     size_t size = 1;
-    for (uint8 i = 0; guid != 0; ++i) {
+    for (uint8_t i = 0; guid != 0; ++i) {
       if (guid & 0xFF) {
-        packGUID[0] |= uint8(1 << i);
-        packGUID[size] = uint8(guid & 0xFF);
+        packGUID[0] |= uint8_t(1 << i);
+        packGUID[size] = uint8_t(guid & 0xFF);
         ++size;
       }
 
@@ -418,63 +421,50 @@ public:
 
   void appendPackXYZ(float x, float y, float z)
   {
-    uint32 packed = 0;
+    uint32_t packed = 0;
     packed |= ((int)(x / 0.25f) & 0x7FF);
     packed |= ((int)(y / 0.25f) & 0x7FF) << 11;
     packed |= ((int)(z / 0.25f) & 0x3FF) << 22;
     *this << packed;
   }
 
-  void put(size_t pos, const uint8* src, size_t cnt)
+  void put(size_t pos, const uint8_t* src, size_t cnt)
   {
-    if (pos + cnt > size()) throw ByteBufferException(true, pos, cnt, size());
+    if (pos + cnt > size()) {
+      HADESMEM_DETAIL_THROW_EXCEPTION(
+        hadesmem::Error{} << ErrorBufferOp{"put"} << ErrorBufferPos{pos}
+                          << ErrorBufferSize{size()}
+                          << ErrorBufferItemSize{cnt});
+    }
     memcpy(&_storage[pos], src, cnt);
   }
 
   void print_storage() const
   {
-    if (!sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG)) // optimize disabled debug
-                                                  // output
-      return;
-
     std::ostringstream ss;
     ss << "STORAGE_SIZE: " << size() << "\n";
 
-    if (sLog.IsIncludeTime()) ss << "         ";
-
     for (size_t i = 0; i < size(); ++i)
-      ss << uint32(read<uint8>(i)) << " - ";
+      ss << uint32_t(read<uint8_t>(i)) << " - ";
 
-    DEBUG_LOG(ss.str().c_str());
+    HADESMEM_DETAIL_TRACE_A(ss.str().c_str());
   }
 
   void textlike() const
   {
-    if (!sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG)) // optimize disabled debug
-                                                  // output
-      return;
-
     std::ostringstream ss;
     ss << "STORAGE_SIZE: " << size() << "\n";
 
-    if (sLog.IsIncludeTime()) ss << "         ";
-
     for (size_t i = 0; i < size(); ++i)
-      ss << read<uint8>(i);
+      ss << read<uint8_t>(i);
 
-    DEBUG_LOG(ss.str().c_str());
+    HADESMEM_DETAIL_TRACE_A(ss.str().c_str());
   }
 
   void hexlike() const
   {
-    if (!sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG)) // optimize disabled debug
-                                                  // output
-      return;
-
     std::ostringstream ss;
     ss << "STORAGE_SIZE: " << size() << "\n";
-
-    if (sLog.IsIncludeTime()) ss << "         ";
 
     size_t j = 1, k = 1;
 
@@ -485,17 +475,16 @@ public:
       } else if (i == (k * 16)) {
         ss << "\n";
 
-        if (sLog.IsIncludeTime()) ss << "         ";
-
         ++k;
         ++j;
       }
 
       char buf[4];
-      snprintf(buf, 4, "%02X", read<uint8>(i));
+      snprintf(buf, sizeof(buf), "%02X", read<uint8_t>(i));
       ss << buf << " ";
     }
-    DEBUG_LOG(ss.str().c_str());
+
+    HADESMEM_DETAIL_TRACE_A(ss.str().c_str());
   }
 
 private:
@@ -504,19 +493,19 @@ private:
   template <typename T>
   void append(T value)
   {
-    EndianConvert(value);
-    append((uint8*)&value, sizeof(T));
+    ByteConverter::EndianConvert(value);
+    append((uint8_t*)&value, sizeof(T));
   }
 
 protected:
   size_t _rpos, _wpos;
-  std::vector<uint8> _storage;
+  std::vector<uint8_t> _storage;
 };
 
 template <typename T>
 inline ByteBuffer& operator<<(ByteBuffer& b, std::vector<T> const& v)
 {
-  b << (uint32)v.size();
+  b << (uint32_t)v.size();
   for (typename std::vector<T>::iterator i = v.begin(); i != v.end(); ++i) {
     b << *i;
   }
@@ -526,7 +515,7 @@ inline ByteBuffer& operator<<(ByteBuffer& b, std::vector<T> const& v)
 template <typename T>
 inline ByteBuffer& operator>>(ByteBuffer& b, std::vector<T>& v)
 {
-  uint32 vsize;
+  uint32_t vsize;
   b >> vsize;
   v.clear();
   while (vsize--) {
@@ -540,7 +529,7 @@ inline ByteBuffer& operator>>(ByteBuffer& b, std::vector<T>& v)
 template <typename T>
 inline ByteBuffer& operator<<(ByteBuffer& b, std::list<T> const& v)
 {
-  b << (uint32)v.size();
+  b << (uint32_t)v.size();
   for (typename std::list<T>::iterator i = v.begin(); i != v.end(); ++i) {
     b << *i;
   }
@@ -550,7 +539,7 @@ inline ByteBuffer& operator<<(ByteBuffer& b, std::list<T> const& v)
 template <typename T>
 inline ByteBuffer& operator>>(ByteBuffer& b, std::list<T>& v)
 {
-  uint32 vsize;
+  uint32_t vsize;
   b >> vsize;
   v.clear();
   while (vsize--) {
@@ -564,7 +553,7 @@ inline ByteBuffer& operator>>(ByteBuffer& b, std::list<T>& v)
 template <typename K, typename V>
 inline ByteBuffer& operator<<(ByteBuffer& b, std::map<K, V>& m)
 {
-  b << (uint32)m.size();
+  b << (uint32_t)m.size();
   for (typename std::map<K, V>::iterator i = m.begin(); i != m.end(); ++i) {
     b << i->first << i->second;
   }
@@ -574,7 +563,7 @@ inline ByteBuffer& operator<<(ByteBuffer& b, std::map<K, V>& m)
 template <typename K, typename V>
 inline ByteBuffer& operator>>(ByteBuffer& b, std::map<K, V>& m)
 {
-  uint32 msize;
+  uint32_t msize;
   b >> msize;
   m.clear();
   while (msize--) {
@@ -604,4 +593,3 @@ inline void ByteBuffer::read_skip<std::string>()
 {
   read_skip<char*>();
 }
-#endif
