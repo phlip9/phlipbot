@@ -95,5 +95,14 @@
     <ClInclude Include="../../phlipbot/Gui.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="../../phlipbot/ByteBuffer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../../phlipbot/ByteConverter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="../../phlipbot/WorldPacket.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

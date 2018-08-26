@@ -184,6 +184,9 @@
     <ClInclude Include="../../phlipbot/WowPlayer.hpp" />
     <ClInclude Include="../../phlipbot/WowUnit.hpp" />
     <ClInclude Include="../../phlipbot/wow_constants.hpp" />
+    <ClInclude Include="../../phlipbot/ByteBuffer.hpp" />
+    <ClInclude Include="../../phlipbot/ByteConverter.hpp" />
+    <ClInclude Include="../../phlipbot/WorldPacket.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\deps\hadesmem\build\vs\asmjit\asmjit.vcxproj">
