@@ -224,7 +224,7 @@ struct WatchContext {
   std::wstring copy_dll_name;
   fs::path orig_dll_path;
   std::wstring orig_dll_name;
-  DWORD proc_id;
+  DWORD proc_id = 0;
   fs::file_time_type orig_dll_last_modified;
 };
 
@@ -359,7 +359,15 @@ BOOL WINAPI signal_handler(_In_ DWORD ctrl_type)
 
 struct Threadpool {
 public:
-  Threadpool()
+  Threadpool() = default;
+  ~Threadpool() = default;
+
+  Threadpool(Threadpool const& other) = delete;
+  Threadpool(Threadpool&& other) noexcept = delete;
+  Threadpool& operator=(Threadpool const& other) = delete;
+  Threadpool& operator=(Threadpool&& other) noexcept = delete;
+
+  void Init()
   {
     // Create a new threadpool with 1 thread for listening to events
     ::InitializeThreadpoolEnvironment(&_cb_env);
@@ -385,13 +393,6 @@ public:
 
     ::SetThreadpoolCallbackPool(cb_env.GetHandle(), pool.GetHandle());
   }
-
-  ~Threadpool() = default;
-
-  Threadpool(Threadpool const& other) = delete;
-  Threadpool(Threadpool&& other) noexcept = delete;
-  Threadpool& operator=(Threadpool const& other) = delete;
-  Threadpool& operator=(Threadpool&& other) noexcept = delete;
 
   void RegisterWait(HANDLE event_handle, PTP_WAIT_CALLBACK cb, void* cb_data)
   {
@@ -419,7 +420,7 @@ public:
     }
   }
 
-  TP_CALLBACK_ENVIRON _cb_env;
+  TP_CALLBACK_ENVIRON _cb_env{};
   SmartCallbackEnvironment cb_env;
   SmartThreadpool pool;
 
@@ -562,6 +563,7 @@ int cmd_handler_watch(po::variables_map const& vm)
 
   // Create a new threadpool with 1 thread for listening to events
   Threadpool thread_pool;
+  thread_pool.Init();
 
   ::SetConsoleCtrlHandler(signal_handler, TRUE);
   std::wcout << "Waiting on process signals...\n";
