@@ -16,9 +16,8 @@
 #include "PhlipBot.hpp"
 #include "dxhook.hpp"
 
-// TODO(phlip9): refactor out pieces
-// TODO(phlip9): refactor out gui, input, etc into bot class to reduce global state
-// TODO(phlip9): try printing all units or something
+// TODO(phlip9): use boost::sml or some state machine library to handle
+//               injection state transitions?
 
 void LogModules()
 {

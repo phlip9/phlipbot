@@ -17,9 +17,9 @@ public:
   WowGameObject(const WowGameObject& obj) = default;
   virtual ~WowGameObject() = default;
 
-  inline types::XYZ WowGameObject::GetPosition() const
+  inline types::Vec3 WowGameObject::GetPosition() const
   {
-    return GetDescriptor<types::XYZ>(offsets::Descriptors::GameObjPos);
+    return GetDescriptor<types::Vec3>(offsets::Descriptors::GameObjPos);
   }
 
   // TODO(phlip9): don't think this is correct

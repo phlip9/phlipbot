@@ -1,11 +1,16 @@
 #include "PhlipBot.hpp"
 
-#include <Shlwapi.h>
-#include <d3d9.h>
-
 #include <hadesmem/detail/smart_handle.hpp>
 #include <hadesmem/detail/trace.hpp>
 #include <hadesmem/error.hpp>
+
+#include "wow_constants.hpp"
+
+// TODO(phlip9): use boost::sml or some state machine library to handle bot
+//               state transitions?
+// TODO(phlip9): use more robust way of detecting whether we're ingame or not
+// TODO(phlip9): anti-afk
+// TODO(phlip9): flexible configuration?
 
 void SetDefaultRenderState(HWND const hwnd, IDirect3DDevice9* device)
 {
@@ -66,9 +71,33 @@ void SetDefaultRenderState(HWND const hwnd, IDirect3DDevice9* device)
 
 namespace phlipbot
 {
+PhlipBot::PhlipBot() noexcept
+  : is_render_initialized(false),
+    prev_frame_time(steady_clock::now()),
+    input(),
+    player_controller(),
+    gui(player_controller)
+{
+}
+
 void PhlipBot::Init() { HADESMEM_DETAIL_TRACE_A("initializing bot"); }
 
-void PhlipBot::Update() {}
+void PhlipBot::Update()
+{
+  float const dt = UpdateClock();
+
+  auto& objmgr = ObjectManager::Get();
+  if (IsInGame(objmgr)) {
+    objmgr.EnumVisibleObjects();
+
+    player_controller.Update(dt);
+  }
+}
+
+bool PhlipBot::IsInGame(ObjectManager const& objmgr)
+{
+  return objmgr.GetPlayerGuid() != 0;
+}
 
 void PhlipBot::Shutdown(HWND const hwnd)
 {
@@ -98,20 +127,6 @@ void PhlipBot::InitRender(HWND const hwnd, IDirect3DDevice9* device)
   gui.Init(hwnd, device);
 
   is_render_initialized = true;
-}
-
-void PhlipBot::ResetRender(HWND const hwnd)
-{
-  HADESMEM_DETAIL_TRACE_FORMAT_A("hwd: [%p], is_render_initialized: [%d]", hwnd,
-                                 is_render_initialized);
-
-  // Uninitialize ImGui on device reset
-  if (is_render_initialized) {
-    input.UnhookInput(hwnd);
-    gui.Reset();
-  }
-
-  is_render_initialized = false;
 }
 
 void PhlipBot::Render(HWND const hwnd, IDirect3DDevice9* device)
@@ -150,5 +165,30 @@ void PhlipBot::Render(HWND const hwnd, IDirect3DDevice9* device)
       hadesmem::Error{} << hadesmem::ErrorString{"state_block->Apply failed"}
                         << hadesmem::ErrorCodeWinHr{apply_sb_hr});
   }
+}
+
+void PhlipBot::ResetRender(HWND const hwnd)
+{
+  HADESMEM_DETAIL_TRACE_FORMAT_A("hwd: [%p], is_render_initialized: [%d]", hwnd,
+                                 is_render_initialized);
+
+  // Uninitialize ImGui on device reset
+  if (is_render_initialized) {
+    input.UnhookInput(hwnd);
+    gui.Reset();
+  }
+
+  is_render_initialized = false;
+}
+
+float PhlipBot::UpdateClock()
+{
+  auto const frame_time = steady_clock::now();
+  auto const frame_duration_ns = frame_time - prev_frame_time;
+  auto const frame_duration_s =
+    std::chrono::duration_cast<std::chrono::duration<float>>(frame_duration_ns);
+  float const dt = frame_duration_s.count();
+  prev_frame_time = frame_time;
+  return dt;
 }
 }

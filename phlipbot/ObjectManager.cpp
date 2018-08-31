@@ -18,6 +18,8 @@
 
 // TODO(phlip9): possibe to use boost::bind to bind object manager instance
 //               to EnumVisibleObjects_Callback?
+// TODO(phlip9): Reverse ClntObjMgr struct and iterate over it directly so
+//               we can remove the global singleton.
 
 using namespace phlipbot::types;
 
@@ -134,19 +136,15 @@ static inline uint32_t ClntObjMgr__EnumVisibleObjects(uint32_t filter)
 
 namespace phlipbot
 {
-Guid ObjectManager::GetPlayerGuid() { return ClntObjMgr__GetActivePlayer(); }
+Guid ObjectManager::GetPlayerGuid() const
+{
+  return ClntObjMgr__GetActivePlayer();
+}
 
 boost::optional<WowPlayer*> ObjectManager::GetPlayer()
 {
   Guid player_guid = GetPlayerGuid();
-  if (!player_guid) return boost::none;
-
-  //// TODO(phlip9): use the player filter
-  // uintptr_t const base_ptr =
-  //  ClntObjMgr__ObjectPtr(ObjectFilter::ALL, player_guid);
-  // if (!base_ptr) return boost::none;
-
-  // return WowPlayer{player_guid, base_ptr};
+  if (player_guid == 0) return boost::none;
 
   auto o_obj = GetObjByGuid(player_guid);
   if (!o_obj) return boost::none;
@@ -159,7 +157,7 @@ boost::optional<WowPlayer*> ObjectManager::GetPlayer()
 
 void ObjectManager::EnumVisibleObjects()
 {
-  HADESMEM_DETAIL_TRACE_A("Updating ObjectManager objects cache");
+  // HADESMEM_DETAIL_TRACE_A("Updating ObjectManager objects cache");
 
   // reset the guid to obj cache
   guid_obj_cache.clear();

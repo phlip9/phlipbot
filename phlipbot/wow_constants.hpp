@@ -2,29 +2,33 @@
 
 #include <stdint.h>
 
+// clang-format off
+
 namespace phlipbot
 {
 namespace types
 {
 using Guid = uint64_t;
 
-struct Intersection
-{
+struct Vec2 {
+  float X;
+  float Y;
+};
+
+struct Vec3 {
+  float X;
+  float Y;
+  float Z;
+};
+
+struct Vec4 {
   float X;
   float Y;
   float Z;
   float R;
 };
 
-struct XYZ
-{
-  float X;
-  float Y;
-  float Z;
-};
-
-struct XYZXYZ
-{
+struct BoundingBox {
   float X1;
   float Y1;
   float Z1;
@@ -33,31 +37,69 @@ struct XYZXYZ
   float Z2;
 };
 
-enum class ErrorCodes : int32_t
-{
-  CastOutOfRange        = 0x131,
-  AttackOutOfRange      = 0xD8,
-  SpellFailed           = 0x2c,
-  OutOfMana             = 0x11F,
-  CantCarryMoreOfThose  = 0x12,
+// TODO(phlip9): generic TSLink<T>
+struct TSLink {
+  TSLink* prev_link;
+  void* next_ptr;
 };
 
-enum class ObjectType : uint8_t
-{
-  NONE       = 0,
-  ITEM       = 1,
-  CONTAINER  = 2,
-  UNIT       = 3,
-  PLAYER     = 4,
-  GAMEOBJ    = 5,
-  DYNOBJ     = 6,
-  CORPSE     = 7,
+struct CMoveSpline {
+};
+
+struct CMovementData {
+  TSLink move_link;        // 0x00
+  TSLink transport_link;   // 0x08
+  Vec3 position;           // 0x10
+  float facing;            // 0x1C
+  float pitch;             // 0x20
+  Vec3 surface_normal;     // 0x24
+  Guid guid;               // 0x30
+  Guid transport_guid;     // 0x38
+  uint32_t move_flags;     // 0x40
+  Vec3 anchor_position;    // 0x44
+  float anchor_facing;     // 0x50
+  float anchor_pitch;      // 0x54
+  uint32_t move_time;      // 0x58
+  Vec3 direction;          // 0x5C
+  Vec2 direction_2d;       // 0x68
+  float cos_anchor_pitch;  // 0x70
+  float sin_anchor_pitch;  // 0x74
+  uint32_t fall_time;      // 0x78
+  float fall_start_elev_1; // 0x7C
+  float fall_start_elev_2; // 0x80
+  float current_speed;     // 0x84
+  float walk_speed;        // 0x88
+  float run_speed;         // 0x8C
+  float swim_speed;        // 0x90
+  float __unk1;            // 0x94
+  float __unk2;            // 0x98
+  float __unk3;            // 0x9C
+  float __unk4;            // 0xA0
+  CMoveSpline* spline;     // 0xA4
+};
+
+enum class ErrorCodes : int32_t {
+  CastOutOfRange       = 0x131,
+  AttackOutOfRange     = 0xD8,
+  SpellFailed          = 0x2c,
+  OutOfMana            = 0x11F,
+  CantCarryMoreOfThose = 0x12,
+};
+
+enum class ObjectType : uint8_t {
+  NONE      = 0,
+  ITEM      = 1,
+  CONTAINER = 2,
+  UNIT      = 3,
+  PLAYER    = 4,
+  GAMEOBJ   = 5,
+  DYNOBJ    = 6,
+  CORPSE    = 7,
 };
 
 namespace ObjectFilter
 {
-uint32_t const
-  ALL = 0xFFFFFFFF;
+uint32_t const ALL = 0xFFFFFFFF;
 };
 
 namespace DynamicFlags
@@ -79,19 +121,18 @@ uint32_t const
   Swimming  = 0x00200000;
 }
 
-enum class MovementOpCode : uint32_t
-{
-  stopTurn          = 0xBE,
-  turnLeft          = 0xBC,
-  turnRight         = 0xBD,
-  moveStop          = 0xB7,
-  moveFront         = 0xB5,
-  moveBack          = 0xB6,
-  setFacing         = 0xDA,
-  heartbeat         = 0xEE,
-  strafeLeft        = 0xB8,
-  strafeRightStart  = 0xB9,
-  strafeStop        = 0xBA,
+enum class MovementOpCode : uint32_t {
+  stopTurn         = 0xBE,
+  turnLeft         = 0xBC,
+  turnRight        = 0xBD,
+  moveStop         = 0xB7,
+  moveFront        = 0xB5,
+  moveBack         = 0xB6,
+  setFacing        = 0xDA,
+  heartbeat        = 0xEE,
+  strafeLeft       = 0xB8,
+  strafeRightStart = 0xB9,
+  strafeStop       = 0xBA,
 };
 
 namespace InputControlFlags
@@ -107,8 +148,7 @@ uint32_t const
   AutoRun     = 0x1000;
 }
 
-enum class ChatType : uint32_t
-{
+enum class ChatType : uint32_t {
   Say     = 0,
   Yell    = 5,
   Channel = 14,
@@ -117,21 +157,18 @@ enum class ChatType : uint32_t
   Whisper = 7,
 };
 
-enum class UnitReaction : uint32_t
-{
-  Hostile   = 1,
-  Neutral   = 3,
-  Friendly  = 4,
+enum class UnitReaction : uint32_t {
+  Hostile  = 1,
+  Neutral  = 3,
+  Friendly = 4,
 };
 
-enum class LoginState
-{
+enum class LoginState {
   Login,
   CharacterSelect,
 };
 
-enum class ClassIds : uint8_t
-{
+enum class ClassIds : uint8_t {
   Warrior = 1,
   Paladin = 2,
   Hunter  = 3,
@@ -143,32 +180,30 @@ enum class ClassIds : uint8_t
   Druid   = 11,
 };
 
-enum class ItemQuality : int32_t
-{
-  Grey = 0,
+enum class ItemQuality : int32_t {
+  Grey  = 0,
   White = 1,
   Green = 2,
-  Blue = 3,
-  Epic = 4,
+  Blue  = 3,
+  Epic  = 4,
 };
 
-enum class CtmType : uint32_t
-{
-  FaceTarget      = 0x1,
-  Face            = 0x2,
-  Stop            = 0x3,
-  Move            = 0x4,
-  NpcInteract     = 0x5,
-  Loot            = 0x6,
-  ObjInteract     = 0x7,
-  FaceOther       = 0x8,
-  Skin            = 0x9,
-  AttackPosition  = 0xA,
-  AttackGuid      = 0xB,
-  ConstantFace    = 0xC,
-  None            = 0xD,
-  Attack          = 0x10,
-  Idle            = 0x13,
+enum class CtmType : uint32_t {
+  FaceTarget     = 0x1,
+  Face           = 0x2,
+  Stop           = 0x3,
+  Move           = 0x4,
+  NpcInteract    = 0x5,
+  Loot           = 0x6,
+  ObjInteract    = 0x7,
+  FaceOther      = 0x8,
+  Skin           = 0x9,
+  AttackPosition = 0xA,
+  AttackGuid     = 0xB,
+  ConstantFace   = 0xC,
+  None           = 0xD,
+  Attack         = 0x10,
+  Idle           = 0x13,
 };
 }
 
@@ -255,7 +290,7 @@ uintptr_t const
   DBCache__ItemStats_C = 0x00C0E2A0;
 }
 
-namespace ItemStats 
+namespace ItemStats
 {
 ptrdiff_t const
   Name    = 0x8,
@@ -279,8 +314,7 @@ ptrdiff_t const
   DescriptorOffset = 0x8;
 }
 
-enum class Descriptors : ptrdiff_t
-{
+enum class Descriptors : ptrdiff_t {
   GotLoot                 = 0xB4,
   SummonedByGuid          = 0x30,
   DynamicFlags            = 0x23C,
@@ -306,7 +340,7 @@ enum class Descriptors : ptrdiff_t
   ContainerId             = 0x6E4,
   ContainerTotalSlots     = 0x6C8,
   GameObjPos              = 0x240,
-  Unit_MovementC          = 0x9A8,
+  Unit__CMovementData      = 0x9A8,
   UnitPos                 = 0x9B0,
   UnitOrientation         = 0x9BC,
   CorpsePos               = 0x24,
@@ -316,8 +350,7 @@ enum class Descriptors : ptrdiff_t
   GameObjNamePtr          = 0x20C,
 };
 
-enum class OpCodes : int32_t
-{
+enum class OpCodes : uint16_t {
   MSG_NULL_ACTION                         = 0x000,
   CMSG_BOOTME                             = 0x001,
   CMSG_DBLOOKUP                           = 0x002,
@@ -1227,3 +1260,5 @@ enum class OpCodes : int32_t
 };
 }
 }
+
+// clang-format on

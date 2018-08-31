@@ -51,6 +51,12 @@
     <ClCompile Include="../../phlipbot/WowContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\phlipbot\PID.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\phlipbot\PlayerController.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../phlipbot/wow_constants.hpp">
@@ -103,6 +109,12 @@
     </ClInclude>
     <ClInclude Include="../../phlipbot/WorldPacket.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\phlipbot\PID.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\phlipbot\PlayerController.hpp">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

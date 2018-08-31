@@ -70,7 +70,7 @@ public:
   }
 
   void EnumVisibleObjects();
-  phlipbot::types::Guid GetPlayerGuid();
+  phlipbot::types::Guid GetPlayerGuid() const;
 
   boost::optional<phlipbot::WowPlayer*> GetPlayer();
   boost::optional<phlipbot::WowObject*>

@@ -17,15 +17,13 @@ public:
   WowUnit(const WowUnit& obj) = default;
   virtual ~WowUnit() = default;
 
-  inline types::XYZ GetPosition() const
+  inline types::CMovementData* GetMovement() const
   {
-    return GetDescriptor<types::XYZ>(offsets::Descriptors::UnitPos);
-  }
+    uintptr_t move_data_ptr =
+      base_ptr +
+      static_cast<ptrdiff_t>(offsets::Descriptors::Unit__CMovementData);
 
-  // in radians
-  inline float GetOrientation() const
-  {
-    return GetDescriptor<float>(offsets::Descriptors::UnitOrientation);
+    return reinterpret_cast<types::CMovementData*>(move_data_ptr);
   }
 
   inline types::Guid GetSummonedByGuid() const
@@ -41,11 +39,6 @@ public:
   inline uint32_t GetFactionId() const
   {
     return GetDescriptor<uint32_t>(offsets::Descriptors::FactionId);
-  }
-
-  inline uint32_t GetMovementFlags() const
-  {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::MovementFlags);
   }
 
   inline uint32_t GetDynamicFlags() const

@@ -30,7 +30,7 @@ ObjectType WowGameObject::GetObjectType() const { return ObjectType::GAMEOBJ; }
 
 void WowGameObject::PrintToStream(std::ostream& os) const
 {
-  XYZ pos = GetPosition();
+  Vec3 pos = GetPosition();
 
   os << std::hex << std::setfill('0');
   os << "{ type: WowGameObject";

@@ -3,6 +3,10 @@
 #include <Windows.h>
 #include <d3d9.h>
 #include <inttypes.h>
+#include <math.h>
+#include <stdlib.h>
+
+#include <boost/math/constants/constants.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
@@ -25,6 +29,8 @@ bool& GetGuiIsVisible()
 }
 void SetGuiIsVisible(bool val) { GetGuiIsVisible() = val; }
 void ToggleGuiIsVisible() { SetGuiIsVisible(!GetGuiIsVisible()); }
+
+Gui::Gui(PlayerController& pc) noexcept : player_controller(pc) {}
 
 void Gui::Init(HWND const hwnd, IDirect3DDevice9* device)
 {
@@ -50,6 +56,8 @@ void Gui::Init(HWND const hwnd, IDirect3DDevice9* device)
 
 void Gui::Render()
 {
+  using namespace boost::math::float_constants;
+
   HADESMEM_DETAIL_ASSERT(is_initialized);
 
   if (!GetGuiIsVisible()) return;
@@ -62,12 +70,11 @@ void Gui::Render()
   ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
 
   if (ImGui::Begin("phlipbot")) {
+    auto& objmgr = ObjectManager::Get();
+    auto const o_player = objmgr.GetPlayer();
 
     if (ImGui::CollapsingHeader("ObjectManager Testing")) {
       if (ImGui::Button("Dump Objects")) {
-        auto& objmgr = ObjectManager::Get();
-        objmgr.EnumVisibleObjects();
-
         for (auto obj : objmgr.IterAllObjs()) {
           HADESMEM_DETAIL_TRACE_A(obj->ToString().c_str());
         }
@@ -80,29 +87,69 @@ void Gui::Render()
       ImGui::SliderFloat("CTM Precision", &ctm_precision, 0.0f, 10.0f);
 
       if (ImGui::Button("Test CTM")) {
-        auto& objmgr = ObjectManager::Get();
-        objmgr.EnumVisibleObjects();
-        auto const o_player = objmgr.GetPlayer();
         if (o_player.has_value()) {
-          auto player = o_player.get();
-          auto player_pos = player->GetPosition();
+          auto* player = o_player.get();
+          auto player_pos = player->GetMovement()->position;
           player_pos.X += ctm_dx;
           player_pos.Y += ctm_dy;
           player->ClickToMove(CtmType::Move, 0, player_pos, ctm_precision);
         }
       }
 
-      ImGui::SliderFloat("Facing", &player_facing, 0.0f, 6.282f);
+      ImGui::Separator();
+
+      {
+        auto const player_pos =
+          o_player
+            .map([](auto* player) { return player->GetMovement()->position; })
+            .value_or(types::Vec3{0, 0, 0});
+
+        ImGui::Text("Player Position: {%.3f, %.3f, %.3f}", player_pos.X,
+                    player_pos.Y, player_pos.Z);
+      }
+
+      ImGui::InputFloat3("Target Position",
+                         reinterpret_cast<float*>(&target_pos), 2);
+
+      ImGui::SliderFloat("Facing", &set_facing, 0.0f, 6.282f);
       ImGui::SameLine();
       if (ImGui::Button("SetFacing")) {
-        auto& objmgr = ObjectManager::Get();
-        objmgr.EnumVisibleObjects();
-        auto const o_player = objmgr.GetPlayer();
         if (o_player.has_value()) {
-          auto player = o_player.get();
-          player->SetFacing(player_facing);
+          auto* player = o_player.get();
+          player->SetFacing(set_facing);
         }
       }
+
+      ImGui::Text("Facing PID Controller");
+
+      auto& facing_ctrl = player_controller.facing_controller;
+      ImGui::SliderFloat("P Gain", &facing_ctrl.gain_p, 0.0f, 1.0f);
+      ImGui::SliderFloat("I Gain", &facing_ctrl.gain_i, 0.0f, 1.0f);
+      ImGui::SliderFloat("D Gain", &facing_ctrl.gain_d, 0.0f, 1.0f);
+
+      if (ImGui::Checkbox("Player Controller Enabled",
+                          &player_controller_enabled)) {
+        player_controller.SetEnabled(player_controller_enabled);
+      }
+
+      ImGui::SameLine();
+      ImGui::RadioButton(
+        "Facing ", &facing_type,
+        static_cast<int>(PlayerController::FacingType::Facing));
+      ImGui::SameLine();
+      ImGui::RadioButton(
+        "Target", &facing_type,
+        static_cast<int>(PlayerController::FacingType::TargetPoint));
+
+      if (facing_type ==
+          static_cast<int>(PlayerController::FacingType::Facing)) {
+        player_controller.SetFacingSetpoint(set_facing);
+      } else if (facing_type ==
+                 static_cast<int>(PlayerController::FacingType::TargetPoint)) {
+        player_controller.SetFacingTargetSetpoint(target_pos);
+      }
+
+      ImGui::Separator();
 
       ImGui::CheckboxFlags("CtmWalk", &input_flags, InputControlFlags::CtmWalk);
       ImGui::SameLine();
@@ -129,21 +176,15 @@ void Gui::Render()
       ImGui::CheckboxFlags("All Flags", &input_flags, 0xFFFFFFFF);
 
       if (ImGui::Button("SetControlBits")) {
-        auto& objmgr = ObjectManager::Get();
-        objmgr.EnumVisibleObjects();
-        auto const o_player = objmgr.GetPlayer();
         if (o_player.has_value()) {
-          auto player = o_player.get();
+          auto* player = o_player.get();
           player->SetControlBits(input_flags, ::GetTickCount());
         }
       }
-
+      ImGui::SameLine();
       if (ImGui::Button("UnsetControlBits")) {
-        auto& objmgr = ObjectManager::Get();
-        objmgr.EnumVisibleObjects();
-        auto const o_player = objmgr.GetPlayer();
         if (o_player.has_value()) {
-          auto player = o_player.get();
+          auto* player = o_player.get();
           player->UnsetControlBits(input_flags, ::GetTickCount());
         }
       }

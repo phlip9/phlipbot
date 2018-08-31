@@ -20,10 +20,10 @@ using namespace phlipbot::offsets::Data;
 using CGPlayer_C__ClickToMove_Fn = char(__thiscall*)(uintptr_t player,
                                                      uint32_t const ctm_type,
                                                      Guid const* target_guid,
-                                                     XYZ const* target_pos,
+                                                     Vec3 const* target_pos,
                                                      float const precision);
 
-using CMovement__SetFacing_Fn = uint32_t(__thiscall*)(uintptr_t cmovement_data,
+using CMovement__SetFacing_Fn = uint32_t(__thiscall*)(CMovementData* move_ptr,
                                                       float const facing);
 
 using CUnit_C__SendMovementUpdate_Fn = void(__thiscall*)(uintptr_t player,
@@ -75,7 +75,7 @@ ObjectType WowPlayer::GetObjectType() const { return ObjectType::PLAYER; }
 
 void WowPlayer::PrintToStream(std::ostream& os) const
 {
-  XYZ pos = GetPosition();
+  Vec3 const& pos = GetMovement()->position;
 
   os << std::hex << std::setfill('0');
   os << "{ type: WowPlayer";
@@ -91,7 +91,7 @@ void WowPlayer::PrintToStream(std::ostream& os) const
   os << ", rage: " << GetRage();
   os << std::hex;
   os << ", target: " << std::setw(16) << GetTargetGuid();
-  os << ", movement_flags: " << std::setw(8) << GetMovementFlags();
+  os << ", movement_flags: " << std::setw(8) << GetMovement()->move_flags;
   os << ", dynamic_flags: " << std::setw(8) << GetDynamicFlags();
   os << " }";
 }
@@ -109,20 +109,17 @@ void WowPlayer::SendUpdateMovement(uint32_t timestamp, MovementOpCode opcode)
 
 void WowPlayer::SetFacing(float facing_rad)
 {
-  uintptr_t cmovement_data =
-    base_ptr + static_cast<ptrdiff_t>(offsets::Descriptors::Unit_MovementC);
-
   auto const set_facing_fn = reinterpret_cast<CMovement__SetFacing_Fn>(
     offsets::Functions::CMovement__SetFacing);
 
-  (set_facing_fn)(cmovement_data, facing_rad);
+  (set_facing_fn)(GetMovement(), facing_rad);
 }
 
-void WowPlayer::SetFacing(XYZ const& target_pos)
+void WowPlayer::SetFacing(Vec3 const& target_pos)
 {
   using namespace boost::math::float_constants;
 
-  auto const pos = GetPosition();
+  auto const& pos = GetMovement()->position;
   float const dy = target_pos.Y - pos.Y;
   float const dx = target_pos.X - pos.X;
 
@@ -135,7 +132,7 @@ void WowPlayer::SetFacing(XYZ const& target_pos)
 
 bool WowPlayer::ClickToMove(CtmType const ctm_type,
                             Guid const target_guid,
-                            XYZ const& target_pos,
+                            Vec3 const& target_pos,
                             float const precision)
 {
   auto const ctm_fn = reinterpret_cast<CGPlayer_C__ClickToMove_Fn>(

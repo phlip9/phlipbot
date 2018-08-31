@@ -73,7 +73,7 @@ std::vector<uint32_t> WowUnit::GetDebuffIds() const
 
 void WowUnit::PrintToStream(std::ostream& os) const
 {
-  XYZ pos = GetPosition();
+  Vec3 const& pos = GetMovement()->position;
 
   os << std::hex << std::setfill('0');
   os << "{ type: WowUnit";
@@ -89,7 +89,7 @@ void WowUnit::PrintToStream(std::ostream& os) const
   os << ", rage: " << GetRage();
   os << std::hex;
   os << ", target: " << std::setw(16) << GetTargetGuid();
-  os << ", movement_flags: " << std::setw(8) << GetMovementFlags();
+  os << ", movement_flags: " << std::setw(8) << GetMovement()->move_flags;
   os << ", dynamic_flags: " << std::setw(8) << GetDynamicFlags();
   os << " }";
 }

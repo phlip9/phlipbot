@@ -168,6 +168,8 @@
     <ClCompile Include="../../phlipbot/WowObject.cpp" />
     <ClCompile Include="../../phlipbot/WowPlayer.cpp" />
     <ClCompile Include="../../phlipbot/WowUnit.cpp" />
+    <ClCompile Include="..\..\phlipbot\PID.cpp" />
+    <ClCompile Include="..\..\phlipbot\PlayerController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../phlipbot/detour_helpers.hpp" />
@@ -187,6 +189,8 @@
     <ClInclude Include="../../phlipbot/ByteBuffer.hpp" />
     <ClInclude Include="../../phlipbot/ByteConverter.hpp" />
     <ClInclude Include="../../phlipbot/WorldPacket.hpp" />
+    <ClInclude Include="..\..\phlipbot\PID.hpp" />
+    <ClInclude Include="..\..\phlipbot\PlayerController.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\deps\hadesmem\build\vs\asmjit\asmjit.vcxproj">

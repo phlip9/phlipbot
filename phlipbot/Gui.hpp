@@ -4,6 +4,9 @@
 #include <d3d9.h>
 #include <stdint.h>
 
+#include "PlayerController.hpp"
+#include "wow_constants.hpp"
+
 namespace phlipbot
 {
 // TODO(phlip9): Refactor out once we implement an input message queue
@@ -13,7 +16,7 @@ void ToggleGuiIsVisible();
 
 struct Gui final {
 public:
-  Gui() = default;
+  explicit Gui(PlayerController& pc) noexcept;
   ~Gui() = default;
   Gui(const Gui&) = delete;
   Gui& operator=(const Gui&) = delete;
@@ -23,14 +26,19 @@ public:
   void Reset();
   void Shutdown();
 
-  bool is_initialized{false};
+  bool is_initialized = false;
 
-  float player_facing = 0.0f;
+  bool player_controller_enabled = false;
+  int facing_type = static_cast<int>(PlayerController::FacingType::Facing);
+  PlayerController& player_controller;
 
   float ctm_precision = 2.0f;
   bool ctm_toggle = false;
   float ctm_dx = 0.0f;
   float ctm_dy = 0.0f;
+
+  float set_facing = 0.0f;
+  types::Vec3 target_pos{};
 
   uint32_t input_flags = 0;
   bool control_toggle = false;
