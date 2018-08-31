@@ -78,6 +78,53 @@ struct CMovementData {
   CMoveSpline* spline;     // 0xA4
 };
 
+struct LoginData {
+  char account[64];
+  uint32_t login_server_id;
+  char session_key[40];
+};
+
+struct WowConnection {
+};
+
+struct CDataStoreVMT {
+};
+
+struct CDataStore {
+  CDataStoreVMT* vmt;
+  void* data;
+  uint32_t base;
+  uint32_t capacity;
+  uint32_t bytes_written;
+  uint32_t bytes_read;
+};
+
+struct NetClientVMT {
+};
+
+struct NetClient {
+  NetClientVMT* vmt;
+  LoginData login_data;
+  uint32_t net_state;
+  uint32_t(__fastcall* handlers[828])(void*,
+                                      uint16_t opcode,
+                                      uint32_t,
+                                      CDataStore* data_store);
+  void* handler_params[828];
+  uint32_t net_event_queue;
+  WowConnection* server_connection;
+  uint32_t ref_count;
+  uint32_t delete_me;
+  uint32_t ping_sent;
+  uint32_t ping_seq;
+  uint32_t latency[16];
+  uint32_t latency_start;
+  uint32_t latency_end;
+  uint32_t bytes_sent;
+  uint32_t bytes_recv;
+  uint32_t connected_timestamp;
+};
+
 enum class ErrorCodes : int32_t {
   CastOutOfRange       = 0x131,
   AttackOutOfRange     = 0xD8,
