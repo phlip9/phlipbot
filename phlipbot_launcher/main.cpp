@@ -30,8 +30,43 @@
 namespace fs = std::experimental::filesystem;
 namespace po = boost::program_options;
 
-using CmdHandlerT = std::function<int(po::variables_map const&)>;
+using std::condition_variable;
+using std::lock_guard;
+using std::mutex;
+using std::unique_lock;
 
+using std::cerr;
+using std::cout;
+using std::move;
+using std::wcerr;
+using std::wcout;
+
+using std::map;
+using std::vector;
+using std::wstring;
+
+using boost::make_optional;
+using boost::none;
+using boost::optional;
+
+using hadesmem::CallResult;
+using hadesmem::CallResult;
+using hadesmem::ErrorCodeWinLast;
+using hadesmem::ErrorString;
+using hadesmem::FreeDll;
+using hadesmem::GetProcessByName;
+using hadesmem::GetSeDebugPrivilege;
+using hadesmem::InjectDll;
+using hadesmem::InjectFlags;
+using hadesmem::Module;
+using hadesmem::Process;
+using hadesmem::detail::PtrToHexString;
+using hadesmem::detail::SmartHandleImpl;
+using hadesmem::detail::SmartLocalFreeHandle;
+
+namespace
+{
+using CmdHandlerT = std::function<int(po::variables_map const&)>;
 
 struct CallbackEnvironmentPolicy {
   using HandleT = PTP_CALLBACK_ENVIRON;
@@ -44,9 +79,7 @@ struct CallbackEnvironmentPolicy {
     return true;
   }
 };
-
-using SmartCallbackEnvironment =
-  hadesmem::detail::SmartHandleImpl<CallbackEnvironmentPolicy>;
+using SmartCallbackEnvironment = SmartHandleImpl<CallbackEnvironmentPolicy>;
 
 
 struct ThreadpoolPolicy {
@@ -61,8 +94,7 @@ struct ThreadpoolPolicy {
     return true;
   }
 };
-
-using SmartThreadpool = hadesmem::detail::SmartHandleImpl<ThreadpoolPolicy>;
+using SmartThreadpool = SmartHandleImpl<ThreadpoolPolicy>;
 
 
 struct CleanupGroupPolicy {
@@ -76,8 +108,7 @@ struct CleanupGroupPolicy {
     return true;
   }
 };
-
-using SmartCleanupGroup = hadesmem::detail::SmartHandleImpl<CleanupGroupPolicy>;
+using SmartCleanupGroup = SmartHandleImpl<CleanupGroupPolicy>;
 
 
 struct ThreadpoolWaitPolicy {
@@ -94,9 +125,7 @@ struct ThreadpoolWaitPolicy {
     return true;
   }
 };
-
-using SmartThreadpoolWait =
-  hadesmem::detail::SmartHandleImpl<ThreadpoolWaitPolicy>;
+using SmartThreadpoolWait = SmartHandleImpl<ThreadpoolWaitPolicy>;
 
 
 struct ChangeNotificationPolicy {
@@ -112,85 +141,75 @@ struct ChangeNotificationPolicy {
     return ::FindCloseChangeNotification(handle);
   }
 };
-
-using SmartChangeNotification =
-  hadesmem::detail::SmartHandleImpl<ChangeNotificationPolicy>;
+using SmartChangeNotification = SmartHandleImpl<ChangeNotificationPolicy>;
 
 
-boost::optional<hadesmem::Process>
-get_proc_from_options(po::variables_map const& vm)
+optional<Process> get_proc_from_options(po::variables_map const& vm)
 {
   try {
     if (vm.count("pid")) {
       DWORD const pid = vm["pid"].as<int>();
-      return boost::make_optional<hadesmem::Process>(hadesmem::Process{pid});
+      return make_optional<Process>(Process{pid});
     } else {
-      auto const& pname = vm["pname"].as<std::wstring>();
-      return boost::make_optional<hadesmem::Process>(
-        hadesmem::GetProcessByName(pname));
+      auto const& pname = vm["pname"].as<wstring>();
+      return make_optional<Process>(GetProcessByName(pname));
     }
   } catch (hadesmem::Error const&) {
     // TODO(phlip9): possible false positives? check ErrorString?
     // TODO(phlip9): don't consume errors?
-    return boost::none;
+    return none;
   }
 }
 
-DWORD_PTR call_dll_load(hadesmem::Process const& proc, HMODULE const mod)
+DWORD_PTR call_dll_load(Process const& proc, HMODULE const mod)
 {
   // call remote Unload() function
-  hadesmem::CallResult<DWORD_PTR> const load_res =
-    hadesmem::CallExport(proc, mod, "Load");
-
+  CallResult<DWORD_PTR> const load_res = CallExport(proc, mod, "Load");
   return load_res.GetReturnValue();
 }
 
 DWORD_PTR call_dll_unload(hadesmem::Process const& proc, HMODULE const mod)
 {
   // call remote Unload() function
-  hadesmem::CallResult<DWORD_PTR> const load_res =
-    hadesmem::CallExport(proc, mod, "Unload");
-
+  CallResult<DWORD_PTR> const load_res = CallExport(proc, mod, "Unload");
   return load_res.GetReturnValue();
 }
 
-boost::optional<hadesmem::Module const>
-get_injected_dll(hadesmem::Process const& proc, std::wstring const& dll_name)
+optional<Module const>
+get_injected_dll(Process const& proc, wstring const& dll_name)
 {
   // TODO(phlip9): use more robust manual iteration through module list
   try {
-    return hadesmem::Module{proc, dll_name};
+    return Module{proc, dll_name};
   } catch (hadesmem::Error const&) {
     // TODO(phlip9): possible false positives? check ErrorString?
     // TODO(phlip9): don't consume errors?
-    return boost::none;
+    return none;
   }
 }
 
-HMODULE inject_dll(hadesmem::Process const& proc, std::wstring const& dll_name)
+HMODULE inject_dll(Process const& proc, wstring const& dll_name)
 {
   uint32_t flags = 0;
-  flags |= hadesmem::InjectFlags::kPathResolution;
-  flags |= hadesmem::InjectFlags::kAddToSearchOrder;
-  return hadesmem::InjectDll(proc, dll_name, flags);
+  flags |= InjectFlags::kPathResolution;
+  flags |= InjectFlags::kAddToSearchOrder;
+  return InjectDll(proc, dll_name, flags);
 }
 
-
-void eject_dll(hadesmem::Process const& proc, std::wstring const& dll_name)
+void eject_dll(Process const& proc, wstring const& dll_name)
 {
   auto const o_mod = get_injected_dll(proc, dll_name);
-
-  if (o_mod.has_value()) {
+  if (o_mod) {
     auto const res = call_dll_unload(proc, o_mod->GetHandle());
-    std::wcout << "Called bot dll's Unload() function\n";
-    std::wcout << "Return value = " << res << "\n";
+    wcout << "Called bot dll's Unload() function\n";
+    wcout << "Return value = " << res << "\n";
 
-    hadesmem::FreeDll(proc, o_mod->GetHandle());
-    std::wcout << "Free'd the bot dll.\n";
+    FreeDll(proc, o_mod->GetHandle());
+    wcout << "Free'd the bot dll.\n";
   }
 }
 
-void reload_dll(hadesmem::Process const& proc, std::wstring const& dll_name)
+void reload_dll(Process const& proc, wstring const& dll_name)
 {
   // Unload() a currently loaded dll
   eject_dll(proc, dll_name);
@@ -198,32 +217,32 @@ void reload_dll(hadesmem::Process const& proc, std::wstring const& dll_name)
   // inject a fresh dll
   auto const mod = inject_dll(proc, dll_name);
 
-  std::wcout << "Successfully injected bot dll at base address = "
-             << hadesmem::detail::PtrToHexString(mod) << "\n";
+  wcout << "Successfully injected bot dll at base address = "
+        << PtrToHexString(mod) << "\n";
 
   // call remote Load() function
   auto const res = call_dll_load(proc, mod);
 
-  std::wcout << "Called bot dll's Load() function\n";
-  std::wcout << "Return value = " << res << "\n";
+  wcout << "Called bot dll's Load() function\n";
+  wcout << "Return value = " << res << "\n";
 }
 
 
 struct WatchContext {
   // is_done is used from a wait callback thread to signal the main thread to
   // cleanup and exit
-  std::mutex is_done_mutex;
-  std::condition_variable is_done_condvar;
+  mutex is_done_mutex;
+  condition_variable is_done_condvar;
   bool is_done = false;
   HANDLE main_thread = nullptr;
 
   // ensure that the file change callback is a critical section
-  std::mutex watch_mutex;
+  mutex watch_mutex;
   SmartChangeNotification dir_watch_handle;
   fs::path copy_dll_path;
-  std::wstring copy_dll_name;
+  wstring copy_dll_name;
   fs::path orig_dll_path;
-  std::wstring orig_dll_name;
+  wstring orig_dll_name;
   DWORD proc_id = 0;
   fs::file_time_type orig_dll_last_modified;
 };
@@ -245,18 +264,17 @@ VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE /* cb_inst */,
 {
   auto ctx = static_cast<WatchContext*>(param);
 
-  std::wcout << "dir_change_cb(...)\n";
+  wcout << "dir_change_cb(...)\n";
 
   try {
     if (wait_res == WAIT_FAILED) {
       HADESMEM_DETAIL_THROW_EXCEPTION(
-        hadesmem::Error{} << hadesmem::ErrorString{"caught WAIT_FAILED in wait "
-                                                   "callback"}
-                          << hadesmem::ErrorCodeWinLast{::GetLastError()});
+        hadesmem::Error{} << ErrorString{"caught WAIT_FAILED in wait callback"}
+                          << ErrorCodeWinLast{::GetLastError()});
     }
 
     {
-      std::lock_guard<std::mutex> lock{ctx->watch_mutex};
+      lock_guard<mutex> lock{ctx->watch_mutex};
 
       if (fs::exists(ctx->orig_dll_path)) {
         auto const orig_dll_last_modified =
@@ -264,41 +282,39 @@ VOID CALLBACK dir_change_cb(PTP_CALLBACK_INSTANCE /* cb_inst */,
 
         // dll was modified -- reload the dll
         if (orig_dll_last_modified > ctx->orig_dll_last_modified) {
-          hadesmem::Process proc{ctx->proc_id};
-          std::wcout << "Unloading dll...\n";
+          Process proc{ctx->proc_id};
+          wcout << "Unloading dll...\n";
           eject_dll(proc, ctx->copy_dll_name);
 
-          std::wcout << "Copying " << ctx->orig_dll_name << " -> "
-                     << ctx->copy_dll_name << "\n";
+          wcout << "Copying " << ctx->orig_dll_name << " -> "
+                << ctx->copy_dll_name << "\n";
           fs::copy_file(ctx->orig_dll_path, ctx->copy_dll_path,
                         fs::copy_options::overwrite_existing);
 
-          std::wcout << "Reloading dll...\n";
+          wcout << "Reloading dll...\n";
           reload_dll(proc, ctx->copy_dll_name);
         }
 
         ctx->orig_dll_last_modified = orig_dll_last_modified;
       } else {
-        std::wcout << "dll does not exist\n";
+        wcout << "dll does not exist\n";
       }
 
       if (!::FindNextChangeNotification(ctx->dir_watch_handle.GetHandle())) {
         HADESMEM_DETAIL_THROW_EXCEPTION(
-          hadesmem::Error{}
-          << hadesmem::ErrorString{"FindNextChangeNotification "
-                                   "failed"}
-          << hadesmem::ErrorCodeWinLast{::GetLastError()});
+          hadesmem::Error{} << ErrorString{"FindNextChangeNotification failed"}
+                            << ErrorCodeWinLast{::GetLastError()});
       }
 
       // reset the wait to the updated notifier event
       ::SetThreadpoolWait(wait, ctx->dir_watch_handle.GetHandle(), nullptr);
     }
   } catch (...) {
-    std::cerr << boost::current_exception_diagnostic_information() << "\n";
+    cerr << boost::current_exception_diagnostic_information() << "\n";
 
     // Signal main thread to exit
     {
-      std::lock_guard<std::mutex> lock{ctx->is_done_mutex};
+      lock_guard<mutex> lock{ctx->is_done_mutex};
       ctx->is_done = true;
     }
     ctx->is_done_condvar.notify_all();
@@ -314,7 +330,7 @@ VOID CALLBACK proc_exit_cb(PTP_CALLBACK_INSTANCE /* cb_inst */,
 
   // Signal main thread to exit
   {
-    std::lock_guard<std::mutex> lock{ctx->is_done_mutex};
+    lock_guard<mutex> lock{ctx->is_done_mutex};
     ctx->is_done = true;
   }
   ctx->is_done_condvar.notify_all();
@@ -330,11 +346,11 @@ BOOL WINAPI signal_handler(_In_ DWORD ctrl_type)
   case CTRL_CLOSE_EVENT: {
     auto& ctx = signal_handler_get_watch_ctx();
 
-    std::wcout << "Caught signal handler, notifying watch thread...\n";
+    wcout << "Caught signal handler, notifying watch thread...\n";
 
     // Signal main thread to exit
     {
-      std::lock_guard<std::mutex> lock{ctx.is_done_mutex};
+      lock_guard<mutex> lock{ctx.is_done_mutex};
       ctx.is_done = true;
     }
     ctx.is_done_condvar.notify_all();
@@ -343,8 +359,8 @@ BOOL WINAPI signal_handler(_In_ DWORD ctrl_type)
     // terminate if we pass the timemout threshold.
     if (ctx.main_thread != nullptr) {
       ::WaitForSingleObject(ctx.main_thread, 20000 /* 20 sec timeout */);
-      std::wcout << "main thread failed to complete before timeout; "
-                    "terminating process.\n";
+      wcout << "main thread failed to complete before timeout; "
+               "terminating process.\n";
     }
 
     break;
@@ -363,8 +379,8 @@ public:
   ~Threadpool() = default;
 
   Threadpool(Threadpool const& other) = delete;
-  Threadpool(Threadpool&& other) noexcept = delete;
   Threadpool& operator=(Threadpool const& other) = delete;
+  Threadpool(Threadpool&& other) noexcept = delete;
   Threadpool& operator=(Threadpool&& other) noexcept = delete;
 
   void Init()
@@ -377,18 +393,16 @@ public:
 
     if (!pool.IsValid()) {
       HADESMEM_DETAIL_THROW_EXCEPTION(
-        hadesmem::Error{}
-        << hadesmem::ErrorString{"Failed to create Threadpool"}
-        << hadesmem::ErrorCodeWinLast{::GetLastError()});
+        hadesmem::Error{} << ErrorString{"Failed to create Threadpool"}
+                          << ErrorCodeWinLast{::GetLastError()});
     }
 
     ::SetThreadpoolThreadMaximum(pool.GetHandle(), 1);
 
     if (!::SetThreadpoolThreadMinimum(pool.GetHandle(), 1)) {
       HADESMEM_DETAIL_THROW_EXCEPTION(
-        hadesmem::Error{} << hadesmem::ErrorString{"Failed to set min thread "
-                                                   "count"}
-                          << hadesmem::ErrorCodeWinLast{::GetLastError()});
+        hadesmem::Error{} << ErrorString{"Failed to set min thread count"}
+                          << ErrorCodeWinLast{::GetLastError()});
     }
 
     ::SetThreadpoolCallbackPool(cb_env.GetHandle(), pool.GetHandle());
@@ -401,14 +415,13 @@ public:
 
     if (!wait.IsValid()) {
       HADESMEM_DETAIL_THROW_EXCEPTION(
-        hadesmem::Error{}
-        << hadesmem::ErrorString{"Failed to create wait object"}
-        << hadesmem::ErrorCodeWinLast{::GetLastError()});
+        hadesmem::Error{} << ErrorString{"Failed to create wait object"}
+                          << ErrorCodeWinLast{::GetLastError()});
     }
 
     ::SetThreadpoolWait(wait.GetHandle(), event_handle, nullptr);
 
-    waiters.emplace_back(std::move(wait));
+    waiters.emplace_back(move(wait));
   }
 
   // block until all active wait callbacks complete
@@ -424,47 +437,47 @@ public:
   SmartCallbackEnvironment cb_env;
   SmartThreadpool pool;
 
-  std::vector<SmartThreadpoolWait> waiters;
+  vector<SmartThreadpoolWait> waiters;
 };
 
 
 int cmd_handler_inject(po::variables_map const& vm)
 {
   // need privileges to inject
-  hadesmem::GetSeDebugPrivilege();
+  GetSeDebugPrivilege();
 
   // get the WoW process handle
   auto const o_proc = get_proc_from_options(vm);
 
   // TODO(phlip9): optionally start new process if no existing process
   //               see hadesmem::CreateAndInject
-  if (!o_proc.has_value()) {
-    std::wcerr << "Error: process not running.\n";
+  if (!o_proc) {
+    wcerr << "Error: process not running.\n";
     return 1;
   }
 
-  std::wcout << "Process id = " << o_proc->GetId() << "\n";
+  wcout << "Process id = " << o_proc->GetId() << "\n";
 
-  auto const& dll_name = vm["dll"].as<std::wstring>();
+  auto const& dll_name = vm["dll"].as<wstring>();
 
   // do nothing if dll already injected
-  if (get_injected_dll(*o_proc, dll_name).has_value()) {
-    std::wcerr << "Error: " << dll_name
-               << " already injected, please eject first.\n";
+  if (get_injected_dll(o_proc.value(), dll_name)) {
+    wcerr << "Error: " << dll_name
+          << " already injected, please eject first.\n";
     return 1;
   }
 
   // inject bot dll into WoW process
   HMODULE const mod = inject_dll(*o_proc, dll_name);
 
-  std::wcout << "Successfully injected bot dll at base address = "
-             << hadesmem::detail::PtrToHexString(mod) << "\n";
+  wcout << "Successfully injected bot dll at base address = "
+        << PtrToHexString(mod) << "\n";
 
   // call remote Load() function
   auto const res = call_dll_load(*o_proc, mod);
 
-  std::wcout << "Called bot dll's Load() function\n";
-  std::wcout << "Return value = " << res << "\n";
+  wcout << "Called bot dll's Load() function\n";
+  wcout << "Return value = " << res << "\n";
 
   return 0;
 }
@@ -472,21 +485,21 @@ int cmd_handler_inject(po::variables_map const& vm)
 int cmd_handler_eject(po::variables_map const& vm)
 {
   // need privileges to eject
-  hadesmem::GetSeDebugPrivilege();
+  GetSeDebugPrivilege();
 
   // get the WoW process handle
   auto const o_proc = get_proc_from_options(vm);
-  if (!o_proc.has_value()) {
-    std::wcerr << "Error: process not running.\n";
+  if (!o_proc) {
+    wcerr << "Error: process not running.\n";
     return 1;
   }
 
-  std::wcout << "Process id = " << o_proc->GetId() << "\n";
+  wcout << "Process id = " << o_proc->GetId() << "\n";
 
-  auto const& dll_name = vm["dll"].as<std::wstring>();
+  auto const& dll_name = vm["dll"].as<wstring>();
 
   // get the phlipbot.dll handle in the WoW process
-  eject_dll(*o_proc, dll_name);
+  eject_dll(o_proc.value(), dll_name);
 
   return 0;
 }
@@ -501,12 +514,12 @@ int cmd_handler_watch(po::variables_map const& vm)
 
   // TODO(phlip9): optionally start new process if no existing process
   //               see hadesmem::CreateAndInject
-  if (!o_proc.has_value()) {
-    std::wcerr << "Error: process not running.\n";
+  if (!o_proc) {
+    wcerr << "Error: process not running.\n";
     return 1;
   }
 
-  std::wcout << "Process id = " << o_proc->GetId() << "\n";
+  wcout << "Process id = " << o_proc->GetId() << "\n";
 
   // Use the global as the source of truth, but always try to pass it as a
   // parameter to handlers that accept parameters.
@@ -518,12 +531,12 @@ int cmd_handler_watch(po::variables_map const& vm)
 
   auto const dir_path = fs::absolute(hadesmem::detail::GetSelfDirPath());
 
-  ctx.orig_dll_name = vm["dll"].as<std::wstring>();
+  ctx.orig_dll_name = vm["dll"].as<wstring>();
   ctx.orig_dll_path = dir_path / fs::path{ctx.orig_dll_name};
 
   if (!fs::exists(ctx.orig_dll_path)) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Dll does not exist"});
+    HADESMEM_DETAIL_THROW_EXCEPTION(hadesmem::Error{}
+                                    << ErrorString{"Dll does not exist"});
   }
 
   ctx.copy_dll_name = ctx.orig_dll_path.stem().wstring() + L"_copy" +
@@ -536,8 +549,8 @@ int cmd_handler_watch(po::variables_map const& vm)
                 fs::copy_options::overwrite_existing);
 
   if (!fs::exists(ctx.copy_dll_path)) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to copy dll"});
+    HADESMEM_DETAIL_THROW_EXCEPTION(hadesmem::Error{}
+                                    << ErrorString{"Failed to copy dll"});
   }
 
   // record the last modified time so we know when the dll has been rebuilt
@@ -545,8 +558,8 @@ int cmd_handler_watch(po::variables_map const& vm)
 
   // eject both phlipbot.dll and phlipbot_copy.dll (if either are injected) and
   // then load phlipbot_copy.dll
-  eject_dll(*o_proc, ctx.orig_dll_name);
-  reload_dll(*o_proc, ctx.copy_dll_name);
+  eject_dll(o_proc.value(), ctx.orig_dll_name);
+  reload_dll(o_proc.value(), ctx.copy_dll_name);
 
   // register for change notifications to the launcher directory
   ctx.dir_watch_handle = SmartChangeNotification{::FindFirstChangeNotificationW(
@@ -555,9 +568,8 @@ int cmd_handler_watch(po::variables_map const& vm)
 
   if (!ctx.dir_watch_handle.IsValid()) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"Failed to set directory "
-                                                 "change handle"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
+      hadesmem::Error{} << ErrorString{"Failed to set directory change handle"}
+                        << ErrorCodeWinLast{::GetLastError()});
   }
 
 
@@ -566,47 +578,44 @@ int cmd_handler_watch(po::variables_map const& vm)
   thread_pool.Init();
 
   ::SetConsoleCtrlHandler(signal_handler, TRUE);
-  std::wcout << "Waiting on process signals...\n";
+  wcout << "Waiting on process signals...\n";
 
   thread_pool.RegisterWait(o_proc->GetHandle(), proc_exit_cb, &ctx);
-  std::wcout << "Waiting on WoW.exe process exit...\n";
+  wcout << "Waiting on WoW.exe process exit...\n";
 
   thread_pool.RegisterWait(ctx.dir_watch_handle.GetHandle(), dir_change_cb,
                            &ctx);
-  std::wcout << "Waiting on file changes...\n";
+  wcout << "Waiting on file changes...\n";
 
   // wait until ctx.is_done flag is triggered from one of the pool threads
   {
-    std::unique_lock<std::mutex> lock{ctx.is_done_mutex};
+    unique_lock<mutex> lock{ctx.is_done_mutex};
     ctx.is_done_condvar.wait(lock, [&ctx] { return ctx.is_done; });
   }
 
   thread_pool.WaitForCallbacks();
 
-  eject_dll(*o_proc, ctx.copy_dll_name);
+  eject_dll(o_proc.value(), ctx.copy_dll_name);
 
   return 0;
 }
 
 int main_inner(int argc, wchar_t** argv)
 {
-  std::map<std::wstring, CmdHandlerT> const cmd_handlers{
-    {L"inject", cmd_handler_inject},
-    {L"eject", cmd_handler_eject},
-    {L"watch", cmd_handler_watch}};
+  map<wstring, CmdHandlerT> const cmd_handlers{{L"inject", cmd_handler_inject},
+                                               {L"eject", cmd_handler_eject},
+                                               {L"watch", cmd_handler_watch}};
 
   po::options_description desc("phlipbot_launcher [inject|eject|watch]");
   auto add = desc.add_options();
   add("help", "print usage");
-  add(
-    "dll,d",
-    po::wvalue<std::wstring>()->default_value(L"phlipbot.dll", "phlipbot.dll"),
-    "filename or path to the dll");
+  add("dll,d",
+      po::wvalue<wstring>()->default_value(L"phlipbot.dll", "phlipbot.dll"),
+      "filename or path to the dll");
   add("pid,p", po::value<int>(), "target process pid");
-  add("pname,n",
-      po::wvalue<std::wstring>()->default_value(L"WoW.exe", "WoW.exe"),
+  add("pname,n", po::wvalue<wstring>()->default_value(L"WoW.exe", "WoW.exe"),
       "target process name");
-  add("command", po::wvalue<std::wstring>()->default_value(L"watch", "watch"),
+  add("command", po::wvalue<wstring>()->default_value(L"watch", "watch"),
       "inject|eject|watch");
 
   po::positional_options_description pos_desc;
@@ -621,16 +630,16 @@ int main_inner(int argc, wchar_t** argv)
   po::notify(vm);
 
   if (vm.count("help")) {
-    std::cout << desc << "\n";
+    cout << desc << "\n";
     return 0;
   }
 
   if (vm.count("command")) {
-    auto const& command = vm["command"].as<std::wstring>();
+    auto const& command = vm["command"].as<wstring>();
 
     if (cmd_handlers.count(command) != 1) {
-      std::wcerr << "Error: invalid command: \"" << command << "\"\n\n";
-      std::cout << desc << "\n";
+      wcerr << "Error: invalid command: \"" << command << "\"\n\n";
+      cout << desc << "\n";
       return 1;
     }
 
@@ -638,10 +647,11 @@ int main_inner(int argc, wchar_t** argv)
     return cmd_handler(vm);
   }
 
-  std::wcerr << "Error: missing command\n\n";
-  std::cout << desc << "\n";
+  wcerr << "Error: missing command\n\n";
+  cout << desc << "\n";
 
   return 1;
+}
 }
 
 int main()
@@ -650,16 +660,16 @@ int main()
     // Get the command line arguments as wide strings
     int argc;
     wchar_t** argv = ::CommandLineToArgvW(::GetCommandLineW(), &argc);
-    hadesmem::detail::SmartLocalFreeHandle smart_argv{argv};
+    SmartLocalFreeHandle smart_argv{argv};
 
     if (argv == nullptr) {
-      std::wcerr << "Error: CommandLineToArgvW failed\n";
+      wcerr << "Error: CommandLineToArgvW failed\n";
       return 1;
     }
 
     return main_inner(argc, argv);
   } catch (...) {
-    std::cerr << boost::current_exception_diagnostic_information() << "\n";
+    cerr << boost::current_exception_diagnostic_information() << "\n";
     return 1;
   }
 }

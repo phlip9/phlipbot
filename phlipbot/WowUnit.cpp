@@ -6,37 +6,39 @@
 #include <string>
 #include <vector>
 
-#include "memory.hpp"
+using std::ostream;
+using std::string;
+using std::vector;
 
-using namespace phlipbot::types;
+using phlipbot::memory::ReadCStr;
+using phlipbot::memory::ReadRaw;
+using phlipbot::offsets::Descriptors;
+namespace ObjectManagerOffsets = phlipbot::offsets::ObjectManagerOffsets;
 
 namespace phlipbot
 {
-std::string WowUnit::GetName() const
+string WowUnit::GetName() const
 {
-  uintptr_t const name_ptr =
-    GetDescriptor<uintptr_t>(offsets::Descriptors::UnitNamePtr);
+  uintptr_t const name_ptr = GetDescriptor<uintptr_t>(Descriptors::UnitNamePtr);
   if (!name_ptr) return "";
 
-  uintptr_t const str_ptr = memory::ReadRaw<uintptr_t>(name_ptr);
+  uintptr_t const str_ptr = ReadRaw<uintptr_t>(name_ptr);
   if (!str_ptr) return "";
 
   // TODO(phlip9): need to reverse actual max size
-  return memory::ReadCStr(str_ptr, 0x40);
+  return ReadCStr(str_ptr, 0x40);
 }
 
 ObjectType WowUnit::GetObjectType() const { return ObjectType::UNIT; }
 
-std::vector<uint32_t> WowUnit::GetBuffIds() const
+vector<uint32_t> WowUnit::GetBuffIds() const
 {
-  std::vector<uint32_t> buffs;
+  vector<uint32_t> buffs;
 
-  ptrdiff_t buff_offset =
-    offsets::ObjectManagerOffsets::DescriptorOffset +
-    static_cast<ptrdiff_t>(offsets::Descriptors::FirstBuff);
+  ptrdiff_t buff_offset = ObjectManagerOffsets::DescriptorOffset +
+                          static_cast<ptrdiff_t>(Descriptors::FirstBuff);
 
-  ptrdiff_t const next_offset =
-    static_cast<ptrdiff_t>(offsets::Descriptors::NextBuff);
+  ptrdiff_t const next_offset = static_cast<ptrdiff_t>(Descriptors::NextBuff);
 
   uint32_t buff_id = GetRelative<uint32_t>(buff_offset);
 
@@ -49,16 +51,14 @@ std::vector<uint32_t> WowUnit::GetBuffIds() const
   return buffs;
 }
 
-std::vector<uint32_t> WowUnit::GetDebuffIds() const
+vector<uint32_t> WowUnit::GetDebuffIds() const
 {
-  std::vector<uint32_t> debuffs;
+  vector<uint32_t> debuffs;
 
-  ptrdiff_t debuff_offset =
-    offsets::ObjectManagerOffsets::DescriptorOffset +
-    static_cast<ptrdiff_t>(offsets::Descriptors::FirstDebuff);
+  ptrdiff_t debuff_offset = ObjectManagerOffsets::DescriptorOffset +
+                            static_cast<ptrdiff_t>(Descriptors::FirstDebuff);
 
-  ptrdiff_t const next_offset =
-    static_cast<ptrdiff_t>(offsets::Descriptors::NextBuff);
+  ptrdiff_t const next_offset = static_cast<ptrdiff_t>(Descriptors::NextBuff);
 
   uint32_t debuff_id = GetRelative<uint32_t>(debuff_offset);
 
@@ -71,7 +71,7 @@ std::vector<uint32_t> WowUnit::GetDebuffIds() const
   return debuffs;
 }
 
-void WowUnit::PrintToStream(std::ostream& os) const
+void WowUnit::PrintToStream(ostream& os) const
 {
   Vec3 const& pos = GetMovement()->position;
 

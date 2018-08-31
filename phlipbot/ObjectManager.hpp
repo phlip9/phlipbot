@@ -1,8 +1,6 @@
 #pragma once
 
-#include <mutex>
 #include <unordered_map>
-
 
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/filtered.hpp>
@@ -10,14 +8,13 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/any_range.hpp>
 
-#include "wow_constants.hpp"
-
 #include "WowContainer.hpp"
 #include "WowGameObject.hpp"
 #include "WowItem.hpp"
 #include "WowObject.hpp"
 #include "WowPlayer.hpp"
 #include "WowUnit.hpp"
+#include "wow_constants.hpp"
 
 namespace phlipbot
 {
@@ -32,7 +29,7 @@ public:
   inline bool IsIngame() { return static_cast<bool>(GetPlayer()); }
 
   template <typename WowT>
-  static bool is_obj_type(phlipbot::WowObject const* obj);
+  static bool is_obj_type(WowObject const* obj);
 
   template <typename WowT>
   using Range = boost::any_range<WowT*, // value type
@@ -70,13 +67,12 @@ public:
   }
 
   void EnumVisibleObjects();
-  phlipbot::types::Guid GetPlayerGuid() const;
+  Guid GetPlayerGuid() const;
 
-  boost::optional<phlipbot::WowPlayer*> GetPlayer();
-  boost::optional<phlipbot::WowObject*>
-  GetObjByGuid(phlipbot::types::Guid const guid);
+  boost::optional<WowPlayer*> GetPlayer();
+  boost::optional<WowObject*> GetObjByGuid(Guid const guid);
 
-  std::unordered_map<types::Guid, std::unique_ptr<WowObject>> guid_obj_cache;
+  std::unordered_map<Guid, std::unique_ptr<WowObject>> guid_obj_cache;
 
 private:
   ObjectManager() = default;

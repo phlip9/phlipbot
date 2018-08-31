@@ -26,21 +26,21 @@ public:
   void Reset();
   void Shutdown();
 
-  bool is_initialized = false;
+  bool is_initialized{false};
 
-  bool player_controller_enabled = false;
-  int facing_type = static_cast<int>(PlayerController::FacingType::Facing);
+  bool player_controller_enabled{false};
+  int facing_type{static_cast<int>(PlayerController::FacingType::Facing)};
   PlayerController& player_controller;
 
-  float ctm_precision = 2.0f;
-  bool ctm_toggle = false;
-  float ctm_dx = 0.0f;
-  float ctm_dy = 0.0f;
+  float ctm_precision{2.0f};
+  bool ctm_toggle{false};
+  float ctm_dx{0.0f};
+  float ctm_dy{0.0f};
 
-  float set_facing = 0.0f;
-  types::Vec3 target_pos{};
+  float set_facing{0.0f};
+  Vec3 target_pos{};
 
-  uint32_t input_flags = 0;
-  bool control_toggle = false;
+  uint32_t input_flags{0};
+  bool control_toggle{false};
 };
 }

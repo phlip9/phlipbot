@@ -1,5 +1,4 @@
 #include <Shlwapi.h>
-//#include <condition_variable>
 #include <chrono>
 #include <d3d9.h>
 #include <thread>
@@ -18,12 +17,32 @@
 
 // TODO(phlip9): use boost::sml or some state machine library to handle
 //               injection state transitions?
+// TODO(phlip9): use mutex + cv to wait for main thread to signal unload
 
+using std::unique_ptr;
+
+using boost::none;
+using boost::optional;
+
+using hadesmem::ErrorCodeWinLast;
+using hadesmem::ErrorString;
+using hadesmem::ModuleList;
+using hadesmem::PatchDetourBase;
+using hadesmem::Process;
+
+using phlipbot::DetourD3D9;
+using phlipbot::GetWindowFromDevice;
+using phlipbot::IDirect3DDevice9_EndScene_Fn;
+using phlipbot::IDirect3DDevice9_Reset_Fn;
+using phlipbot::PhlipBot;
+using phlipbot::UndetourD3D9;
+
+namespace
+{
 void LogModules()
 {
-  hadesmem::Process const process(::GetCurrentProcessId());
-
-  hadesmem::ModuleList const module_list(process);
+  Process const process(::GetCurrentProcessId());
+  ModuleList const module_list(process);
 
   HADESMEM_DETAIL_TRACE_A("WoW.exe dll modules:");
   for (auto const& module : module_list) {
@@ -34,10 +53,10 @@ void LogModules()
 void LogWindowTitle(HWND const wnd)
 {
   char buf[256];
-  if (!GetWindowTextA(wnd, static_cast<LPSTR>(buf), sizeof(buf))) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"GetWindowTextA failed"}
-                        << hadesmem::ErrorCodeWinLast{::GetLastError()});
+  if (!::GetWindowTextA(wnd, static_cast<LPSTR>(buf), sizeof(buf))) {
+    HADESMEM_DETAIL_THROW_EXCEPTION(hadesmem::Error{}
+                                    << ErrorString{"GetWindowTextA failed"}
+                                    << ErrorCodeWinLast{::GetLastError()});
   }
   HADESMEM_DETAIL_TRACE_FORMAT_A("window title = %s", buf);
 }
@@ -55,7 +74,7 @@ BOOL CALLBACK EnumWindowsCallback(HWND const handle, LPARAM const lparam)
 
   // query the owning process
   DWORD process_id;
-  GetWindowThreadProcessId(handle, &process_id);
+  ::GetWindowThreadProcessId(handle, &process_id);
 
   // continue if this window doesn't belong to the target process
   if (process_id != aux_data.target_proc_id) {
@@ -63,7 +82,7 @@ BOOL CALLBACK EnumWindowsCallback(HWND const handle, LPARAM const lparam)
   }
 
   // ensure not a child window
-  if (GetWindow(handle, GW_OWNER) != nullptr) {
+  if (::GetWindow(handle, GW_OWNER) != nullptr) {
     return TRUE;
   }
 
@@ -73,19 +92,19 @@ BOOL CALLBACK EnumWindowsCallback(HWND const handle, LPARAM const lparam)
 }
 
 // find the root window of a process
-boost::optional<HWND> FindMainWindow(hadesmem::Process const& process)
+optional<HWND> FindMainWindow(Process const& process)
 {
   enum_windows_aux aux_data;
   aux_data.target_proc_id = process.GetId();
   aux_data.target_window_handle = nullptr;
 
   auto aux_ptr = reinterpret_cast<LPARAM>(&aux_data);
-  EnumWindows(EnumWindowsCallback, aux_ptr);
+  ::EnumWindows(EnumWindowsCallback, aux_ptr);
 
   if (aux_data.target_window_handle) {
     return aux_data.target_window_handle;
   } else {
-    return boost::none;
+    return none;
   }
 }
 
@@ -94,9 +113,9 @@ boost::optional<HWND> FindMainWindow(hadesmem::Process const& process)
 
 // Reference to the PhlipBot instance. Should only be used in
 // the directx hooks to manage bot lifecycle.
-std::unique_ptr<phlipbot::PhlipBot>& GetBotInstance() noexcept
+unique_ptr<PhlipBot>& GetBotInstance() noexcept
 {
-  static std::unique_ptr<phlipbot::PhlipBot> bot;
+  static unique_ptr<PhlipBot> bot;
   return bot;
 }
 
@@ -126,14 +145,14 @@ void SetHasShutdown(bool val) noexcept { GetHasShutdown() = val; }
 // Called every end scene. Handles bot lifecycle management and calling into
 // the bot main loop.
 extern "C" HRESULT WINAPI IDirect3DDevice9_EndScene_Detour(
-  hadesmem::PatchDetourBase* detour, IDirect3DDevice9* device)
+  PatchDetourBase* detour, IDirect3DDevice9* device)
 {
   try {
     // Do nothing if we've already shutdown
     if (!GetHasShutdown()) {
 
       // get the current window from the directx device
-      HWND const hwnd = phlipbot::GetWindowFromDevice(device);
+      HWND const hwnd = GetWindowFromDevice(device);
 
       // catch shutdown signal
       if (GetIsShuttingDown()) {
@@ -156,7 +175,7 @@ extern "C" HRESULT WINAPI IDirect3DDevice9_EndScene_Detour(
         auto& bot = GetBotInstance();
         if (!bot) {
           // initialize bot
-          bot.reset(new phlipbot::PhlipBot);
+          bot.reset(new PhlipBot);
           bot->Init();
         }
 
@@ -181,8 +200,7 @@ extern "C" HRESULT WINAPI IDirect3DDevice9_EndScene_Detour(
   }
 
   // call the original end scene
-  auto const end_scene =
-    detour->GetTrampolineT<phlipbot::IDirect3DDevice9_EndScene_Fn>();
+  auto const end_scene = detour->GetTrampolineT<IDirect3DDevice9_EndScene_Fn>();
   auto ret = end_scene(device);
 
   return ret;
@@ -190,15 +208,13 @@ extern "C" HRESULT WINAPI IDirect3DDevice9_EndScene_Detour(
 
 // Hook device reset so we can reset our internal renderer on e.g. window
 // resize.
-extern "C" HRESULT WINAPI
-IDirect3DDevice9_Reset_Detour(hadesmem::PatchDetourBase* detour,
-                              IDirect3DDevice9* device,
-                              D3DPRESENT_PARAMETERS* pp)
+extern "C" HRESULT WINAPI IDirect3DDevice9_Reset_Detour(
+  PatchDetourBase* detour, IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* pp)
 {
   HADESMEM_DETAIL_TRACE_FORMAT_A("Args: [%p] [%p]", device, pp);
 
   // get the current window from the directx device
-  HWND const hwnd = phlipbot::GetWindowFromDevice(device);
+  HWND const hwnd = GetWindowFromDevice(device);
 
   // Reset the bot renderer if it's initialized
   auto& bot = GetBotInstance();
@@ -207,8 +223,7 @@ IDirect3DDevice9_Reset_Detour(hadesmem::PatchDetourBase* detour,
   }
 
   // call the original device reset
-  auto const reset =
-    detour->GetTrampolineT<phlipbot::IDirect3DDevice9_Reset_Fn>();
+  auto const reset = detour->GetTrampolineT<IDirect3DDevice9_Reset_Fn>();
   auto ret = reset(device, pp);
 
   HADESMEM_DETAIL_TRACE_FORMAT_A("Ret: [%ld]", ret);
@@ -227,27 +242,26 @@ extern "C" __declspec(dllexport) unsigned int Load()
   SetIsShuttingDown(false);
   SetHasShutdown(false);
 
-  hadesmem::Process const process{::GetCurrentProcessId()};
+  Process const process{::GetCurrentProcessId()};
 
   // get the WoW.exe main window handle
-  boost::optional<HWND> omain_hwnd = FindMainWindow(process);
+  auto const omain_hwnd = FindMainWindow(process);
   if (!omain_hwnd) {
     HADESMEM_DETAIL_TRACE_A("ERROR: Could not find main window handle");
     return EXIT_FAILURE;
   }
-  HWND main_hwnd = *omain_hwnd;
 
   // log the main window title
   try {
-    LogWindowTitle(main_hwnd);
+    LogWindowTitle(omain_hwnd.value());
   } catch (...) {
     return EXIT_FAILURE;
   }
 
   // hook d3d9 device reset and end scene
   try {
-    phlipbot::DetourD3D9(process, main_hwnd, &IDirect3DDevice9_EndScene_Detour,
-                         &IDirect3DDevice9_Reset_Detour);
+    DetourD3D9(process, *omain_hwnd, &IDirect3DDevice9_EndScene_Detour,
+               &IDirect3DDevice9_Reset_Detour);
   } catch (...) {
     HADESMEM_DETAIL_TRACE_A("ERROR: Failed to detour end scene and reset");
     return EXIT_FAILURE;
@@ -260,6 +274,8 @@ extern "C" __declspec(dllexport) unsigned int Load()
 // from the WoW.exe process.
 extern "C" __declspec(dllexport) unsigned int Unload()
 {
+  using namespace std::chrono_literals;
+
   HADESMEM_DETAIL_TRACE_A("phlipbot dll Unload() called");
 
   // signal the main thread to begin shutting down
@@ -270,10 +286,10 @@ extern "C" __declspec(dllexport) unsigned int Unload()
   if (is_detoured) {
     // spin until the bot shuts down
     while (!GetHasShutdown()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      std::this_thread::sleep_for(10ms);
     }
 
-    phlipbot::UndetourD3D9();
+    UndetourD3D9();
   }
 
   SetIsShuttingDown(false);
@@ -303,4 +319,5 @@ BOOL APIENTRY DllMain(HMODULE /* hModule */,
     break;
   }
   return TRUE;
+}
 }

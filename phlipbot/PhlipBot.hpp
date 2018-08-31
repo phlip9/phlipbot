@@ -22,7 +22,6 @@ public:
 
   void Init();
   void Update();
-  bool IsInGame(ObjectManager const& objmgr);
   void Shutdown(HWND const hwnd);
 
   void InitRender(HWND const hwnd, IDirect3DDevice9* device);

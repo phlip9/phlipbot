@@ -1,6 +1,6 @@
 #include "PlayerController.hpp"
 
-#include <math.h>
+#include <cmath>
 
 #include <boost/math/constants/constants.hpp>
 
@@ -8,10 +8,13 @@
 
 #include "ObjectManager.hpp"
 
+using std::atan2f;
+
+using boost::math::float_constants::pi;
+using boost::math::float_constants::two_pi;
+
 namespace phlipbot
 {
-using namespace boost::math::float_constants;
-
 // TODO(phlip9): take in some config thing to set PID gains
 PlayerController::PlayerController() noexcept {}
 
@@ -38,7 +41,7 @@ void PlayerController::Update(float const dt)
     auto const& pos = player->GetMovement()->position;
     float const dy = facing_target_setpoint.Y - pos.Y;
     float const dx = facing_target_setpoint.X - pos.X;
-    _facing_setpoint = pi - std::atan2f(dy, -dx);
+    _facing_setpoint = pi - atan2f(dy, -dx);
   } else {
     HADESMEM_DETAIL_ASSERT(false && "invalid FacingType");
   }
@@ -75,7 +78,7 @@ void PlayerController::SetFacingSetpoint(float const facing)
   facing_type = FacingType::Facing;
 }
 
-void PlayerController::SetFacingTargetSetpoint(types::Vec3 const& target_point)
+void PlayerController::SetFacingTargetSetpoint(Vec3 const& target_point)
 {
   facing_target_setpoint = target_point;
   facing_type = FacingType::TargetPoint;

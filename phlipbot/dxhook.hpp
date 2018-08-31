@@ -14,16 +14,16 @@ using IDirect3DDevice9_EndScene_Fn = HRESULT(WINAPI*)(IDirect3DDevice9* device);
 using IDirect3DDevice9_Reset_Fn = HRESULT(WINAPI*)(IDirect3DDevice9* device,
                                                    D3DPRESENT_PARAMETERS* pp);
 
+using EndSceneDetour = hadesmem::PatchDetour<IDirect3DDevice9_EndScene_Fn>;
+using ResetDetour = hadesmem::PatchDetour<IDirect3DDevice9_Reset_Fn>;
+
 struct d3d9_offsets {
   uintptr_t end_scene;
   uintptr_t reset;
 };
 
-std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_EndScene_Fn>>&
-GetIDirect3DDevice9EndSceneDetour() noexcept;
-
-std::unique_ptr<hadesmem::PatchDetour<phlipbot::IDirect3DDevice9_Reset_Fn>>&
-GetIDirect3DDevice9ResetDetour() noexcept;
+std::unique_ptr<EndSceneDetour>& GetIDirect3DDevice9EndSceneDetour() noexcept;
+std::unique_ptr<ResetDetour>& GetIDirect3DDevice9ResetDetour() noexcept;
 
 d3d9_offsets GetD3D9Offsets(IDirect3DDevice9Ex* device_ex);
 

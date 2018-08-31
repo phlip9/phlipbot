@@ -1,14 +1,12 @@
 #pragma once
 
-#include "wow_constants.hpp"
-
 #include "WowUnit.hpp"
 
 namespace phlipbot
 {
 struct WowPlayer : WowUnit {
 public:
-  explicit WowPlayer(types::Guid const guid, uintptr_t const base_ptr)
+  explicit WowPlayer(Guid const guid, uintptr_t const base_ptr)
     : WowUnit(guid, base_ptr)
   {
   }
@@ -16,17 +14,17 @@ public:
   virtual ~WowPlayer() = default;
 
   virtual std::string GetName() const override;
-  virtual types::ObjectType GetObjectType() const override;
+  virtual ObjectType GetObjectType() const override;
   virtual void PrintToStream(std::ostream& os) const override;
 
-  void SendUpdateMovement(uint32_t timestamp, types::MovementOpCode opcode);
+  void SendUpdateMovement(uint32_t timestamp, MovementOpCode opcode);
 
   void SetFacing(float facing_radians);
-  void SetFacing(types::Vec3 const& target_pos);
+  void SetFacing(Vec3 const& target_pos);
 
-  bool ClickToMove(types::CtmType const ctm_type,
-                   types::Guid const target_guid,
-                   types::Vec3 const& target_pos,
+  bool ClickToMove(CtmType const ctm_type,
+                   Guid const target_guid,
+                   Vec3 const& target_pos,
                    float const precision = 2.0f);
 
   uint32_t SetControlBits(uint32_t flags, uint32_t timestamp);

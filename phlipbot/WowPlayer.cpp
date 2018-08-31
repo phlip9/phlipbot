@@ -1,21 +1,30 @@
 #include "WowPlayer.hpp"
 
 #include <Windows.h>
+#include <cmath>
 #include <iomanip>
-#include <iostream>
-#include <math.h>
 #include <stdint.h>
-#include <string>
 
 #include <boost/math/constants/constants.hpp>
 
 #include <hadesmem/detail/trace.hpp>
 
 #include "memory.hpp"
-#include "wow_constants.hpp"
 
-using namespace phlipbot::types;
-using namespace phlipbot::offsets::Data;
+using std::atan2f;
+using std::ostream;
+using std::string;
+
+using boost::math::float_constants::pi;
+
+using phlipbot::CMovementData;
+using phlipbot::Guid;
+using phlipbot::Vec3;
+using phlipbot::memory::ReadCStr;
+using phlipbot::memory::ReadRaw;
+
+namespace FunctionOffsets = phlipbot::offsets::Functions;
+namespace DataOffsets = phlipbot::offsets::Data;
 
 using CGPlayer_C__ClickToMove_Fn = char(__thiscall*)(uintptr_t player,
                                                      uint32_t const ctm_type,
@@ -40,31 +49,33 @@ using CGInputControl__SetControlBit_Fn =
                         uint32_t timestamp,
                         uint32_t sticky);
 
-
-static inline uintptr_t CGInputControl__GetActive()
+namespace
+{
+inline uintptr_t CGInputControl__GetActive()
 {
   auto const get_active_fn = reinterpret_cast<CGInputControl__GetActive_Fn>(
-    phlipbot::offsets::Functions::CGInputControl__GetActive);
+    FunctionOffsets::CGInputControl__GetActive);
 
   return (get_active_fn)();
+}
 }
 
 namespace phlipbot
 {
-std::string WowPlayer::GetName() const
+string WowPlayer::GetName() const
 {
-  uintptr_t const cache_ptr = offsets::Data::DBCache__NameCache;
+  uintptr_t const cache_ptr = DataOffsets::DBCache__NameCache;
 
   uintptr_t entry_ptr = cache_ptr + 0x8;
-  Guid next_guid = memory::ReadRaw<Guid>(entry_ptr + 0xC);
+  Guid next_guid = ReadRaw<Guid>(entry_ptr + 0xC);
 
   while (next_guid != 0) {
     if (next_guid == guid) {
-      return memory::ReadCStr(entry_ptr + 0x14, 0x40);
+      return ReadCStr(entry_ptr + 0x14, 0x40);
     }
 
-    entry_ptr = memory::ReadRaw<uintptr_t>(entry_ptr);
-    next_guid = memory::ReadRaw<Guid>(entry_ptr + 0xC);
+    entry_ptr = ReadRaw<uintptr_t>(entry_ptr);
+    next_guid = ReadRaw<Guid>(entry_ptr + 0xC);
   }
 
   return "";
@@ -73,7 +84,7 @@ std::string WowPlayer::GetName() const
 ObjectType WowPlayer::GetObjectType() const { return ObjectType::PLAYER; }
 
 
-void WowPlayer::PrintToStream(std::ostream& os) const
+void WowPlayer::PrintToStream(ostream& os) const
 {
   Vec3 const& pos = GetMovement()->position;
 
@@ -100,7 +111,7 @@ void WowPlayer::SendUpdateMovement(uint32_t timestamp, MovementOpCode opcode)
 {
   auto const send_movement_fn =
     reinterpret_cast<CUnit_C__SendMovementUpdate_Fn>(
-      offsets::Functions::CUnit_C__SendMovementUpdate);
+      FunctionOffsets::CUnit_C__SendMovementUpdate);
 
   auto const _opcode = static_cast<uint32_t>(opcode);
 
@@ -110,20 +121,18 @@ void WowPlayer::SendUpdateMovement(uint32_t timestamp, MovementOpCode opcode)
 void WowPlayer::SetFacing(float facing_rad)
 {
   auto const set_facing_fn = reinterpret_cast<CMovement__SetFacing_Fn>(
-    offsets::Functions::CMovement__SetFacing);
+    FunctionOffsets::CMovement__SetFacing);
 
   (set_facing_fn)(GetMovement(), facing_rad);
 }
 
 void WowPlayer::SetFacing(Vec3 const& target_pos)
 {
-  using namespace boost::math::float_constants;
-
   auto const& pos = GetMovement()->position;
   float const dy = target_pos.Y - pos.Y;
   float const dx = target_pos.X - pos.X;
 
-  float const facing_rad = pi - std::atan2f(dy, -dx);
+  float const facing_rad = pi - atan2f(dy, -dx);
 
   SetFacing(facing_rad);
 
@@ -136,7 +145,7 @@ bool WowPlayer::ClickToMove(CtmType const ctm_type,
                             float const precision)
 {
   auto const ctm_fn = reinterpret_cast<CGPlayer_C__ClickToMove_Fn>(
-    offsets::Functions::CGPlayer_C__ClickToMove);
+    FunctionOffsets::CGPlayer_C__ClickToMove);
 
   SetFacing(target_pos);
 
@@ -148,7 +157,7 @@ uint32_t WowPlayer::SetControlBits(uint32_t control_flags, uint32_t timestamp)
 {
   auto const set_ctrl_bit_fn =
     reinterpret_cast<CGInputControl__SetControlBit_Fn>(
-      offsets::Functions::CGInputControl__SetControlBit);
+      FunctionOffsets::CGInputControl__SetControlBit);
 
   auto const input_ctrl_ptr = CGInputControl__GetActive();
 
@@ -159,7 +168,7 @@ uint32_t WowPlayer::UnsetControlBits(uint32_t control_flags, uint32_t timestamp)
 {
   auto const set_ctrl_bit_fn =
     reinterpret_cast<CGInputControl__SetControlBit_Fn>(
-      offsets::Functions::CGInputControl__SetControlBit);
+      FunctionOffsets::CGInputControl__SetControlBit);
 
   auto const input_ctrl_ptr = CGInputControl__GetActive();
 

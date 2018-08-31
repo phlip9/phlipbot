@@ -2,9 +2,6 @@
 
 #include <hadesmem/detail/smart_handle.hpp>
 #include <hadesmem/detail/trace.hpp>
-#include <hadesmem/error.hpp>
-
-#include "wow_constants.hpp"
 
 // TODO(phlip9): use boost::sml or some state machine library to handle bot
 //               state transitions?
@@ -12,6 +9,16 @@
 // TODO(phlip9): anti-afk
 // TODO(phlip9): flexible configuration?
 
+using std::chrono::duration;
+using std::chrono::duration_cast;
+
+using hadesmem::detail::SmartComHandle;
+
+using hadesmem::ErrorCodeWinHr;
+using hadesmem::ErrorString;
+
+namespace
+{
 void SetDefaultRenderState(HWND const hwnd, IDirect3DDevice9* device)
 {
   device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
@@ -67,6 +74,7 @@ void SetDefaultRenderState(HWND const hwnd, IDirect3DDevice9* device)
   vp.MaxZ = 1;
   device->SetViewport(&vp);
 }
+}
 
 
 namespace phlipbot
@@ -87,16 +95,11 @@ void PhlipBot::Update()
   float const dt = UpdateClock();
 
   auto& objmgr = ObjectManager::Get();
-  if (IsInGame(objmgr)) {
+  if (objmgr.IsIngame()) {
     objmgr.EnumVisibleObjects();
 
     player_controller.Update(dt);
   }
-}
-
-bool PhlipBot::IsInGame(ObjectManager const& objmgr)
-{
-  return objmgr.GetPlayerGuid() != 0;
 }
 
 void PhlipBot::Shutdown(HWND const hwnd)
@@ -146,11 +149,10 @@ void PhlipBot::Render(HWND const hwnd, IDirect3DDevice9* device)
   auto const create_sb_hr = device->CreateStateBlock(D3DSBT_ALL, &state_block);
   if (FAILED(create_sb_hr)) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{}
-      << hadesmem::ErrorString{"device->CreateStateBlock failed"}
-      << hadesmem::ErrorCodeWinHr{create_sb_hr});
+      hadesmem::Error{} << ErrorString{"device->CreateStateBlock failed"}
+                        << ErrorCodeWinHr{create_sb_hr});
   }
-  hadesmem::detail::SmartComHandle state_block_cleanup{state_block};
+  SmartComHandle state_block_cleanup{state_block};
 
   // Set up needed to render GUI
   SetDefaultRenderState(hwnd, device);
@@ -161,9 +163,9 @@ void PhlipBot::Render(HWND const hwnd, IDirect3DDevice9* device)
   // Restore the original device state
   auto const apply_sb_hr = state_block->Apply();
   if (FAILED(apply_sb_hr)) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << hadesmem::ErrorString{"state_block->Apply failed"}
-                        << hadesmem::ErrorCodeWinHr{apply_sb_hr});
+    HADESMEM_DETAIL_THROW_EXCEPTION(hadesmem::Error{}
+                                    << ErrorString{"state_block->Apply failed"}
+                                    << ErrorCodeWinHr{apply_sb_hr});
   }
 }
 
@@ -186,7 +188,7 @@ float PhlipBot::UpdateClock()
   auto const frame_time = steady_clock::now();
   auto const frame_duration_ns = frame_time - prev_frame_time;
   auto const frame_duration_s =
-    std::chrono::duration_cast<std::chrono::duration<float>>(frame_duration_ns);
+    duration_cast<duration<float>>(frame_duration_ns);
   float const dt = frame_duration_s.count();
   prev_frame_time = frame_time;
   return dt;

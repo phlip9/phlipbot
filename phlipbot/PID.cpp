@@ -1,9 +1,5 @@
 #include "PID.hpp"
 
-#include <math.h>
-
-#include <hadesmem/detail/assert.hpp>
-
 namespace phlipbot
 {
 PID::PID(float _gain_p, float _gain_i, float _gain_d) noexcept

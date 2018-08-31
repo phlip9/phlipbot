@@ -1,16 +1,12 @@
 #pragma once
 
-#include <stdint.h>
-
-#include "wow_constants.hpp"
-
 #include "WowItem.hpp"
 
 namespace phlipbot
 {
 struct WowContainer : WowItem {
 public:
-  explicit WowContainer(types::Guid const guid, uintptr_t const base_ptr)
+  explicit WowContainer(Guid const guid, uintptr_t const base_ptr)
     : WowItem(guid, base_ptr)
   {
   }
@@ -21,6 +17,6 @@ public:
 
   virtual void PrintToStream(std::ostream& os) const override;
 
-  virtual phlipbot::types::ObjectType GetObjectType() const override;
+  virtual ObjectType GetObjectType() const override;
 };
 }

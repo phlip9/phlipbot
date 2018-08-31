@@ -1,27 +1,34 @@
 #include "ObjectManager.hpp"
 
 #include <inttypes.h>
-#include <map>
 #include <memory>
 
-#include <boost/optional.hpp>
-
 #include <hadesmem/detail/trace.hpp>
-
-#include "WowContainer.hpp"
-#include "WowGameObject.hpp"
-#include "WowItem.hpp"
-#include "WowObject.hpp"
-#include "WowPlayer.hpp"
-#include "WowUnit.hpp"
-#include "wow_constants.hpp"
 
 // TODO(phlip9): possibe to use boost::bind to bind object manager instance
 //               to EnumVisibleObjects_Callback?
 // TODO(phlip9): Reverse ClntObjMgr struct and iterate over it directly so
 //               we can remove the global singleton.
 
-using namespace phlipbot::types;
+using std::make_unique;
+using std::unique_ptr;
+
+using boost::optional;
+using boost::none;
+
+using phlipbot::Guid;
+using phlipbot::ObjectManager;
+using phlipbot::ObjectType;
+using phlipbot::WowContainer;
+using phlipbot::WowGameObject;
+using phlipbot::WowItem;
+using phlipbot::WowObject;
+using phlipbot::WowPlayer;
+using phlipbot::WowUnit;
+using phlipbot::memory::ReadRaw;
+
+namespace FunctionOffsets = phlipbot::offsets::Functions;
+namespace ObjectManagerOffsets = phlipbot::offsets::ObjectManagerOffsets;
 
 using ClntObjMgr__GetActivePlayer_Fn = Guid(__stdcall*)();
 
@@ -36,19 +43,21 @@ using ClntObjMgr__EnumVisibleObjects_Callback_Fn =
 using ClntObjMgr__EnumVisibleObjects_Fn = uint32_t(__fastcall*)(
   ClntObjMgr__EnumVisibleObjects_Callback_Fn callback, uint32_t filter);
 
-static inline Guid ClntObjMgr__GetActivePlayer()
+namespace
+{
+inline Guid ClntObjMgr__GetActivePlayer()
 {
   auto const getActivePlayerFn =
     reinterpret_cast<ClntObjMgr__GetActivePlayer_Fn>(
-      phlipbot::offsets::Functions::ClntObjMgr__GetActivePlayer);
+      FunctionOffsets::ClntObjMgr__GetActivePlayer);
 
   return (getActivePlayerFn)();
 }
 
-static inline uintptr_t ClntObjMgr__ObjectPtr(uint32_t filter, Guid guid)
+inline uintptr_t ClntObjMgr__ObjectPtr(uint32_t filter, Guid guid)
 {
   auto const objectPtrFn = reinterpret_cast<ClntObjMgr__ObjectPtr_Fn>(
-    phlipbot::offsets::Functions::ClntObjMgr__ObjectPtr);
+    FunctionOffsets::ClntObjMgr__ObjectPtr);
 
   return (objectPtrFn)(filter, nullptr, guid, 0);
 }
@@ -69,12 +78,8 @@ struct ThisT {
       return 0;
     }
 
-    uintptr_t const obj_type_ptr =
-      obj_ptr + phlipbot::offsets::ObjectManagerOffsets::ObjType;
-
-    uint8_t const obj_type_raw =
-      phlipbot::memory::ReadRaw<uint8_t>(obj_type_ptr);
-
+    uintptr_t const obj_type_ptr = obj_ptr + ObjectManagerOffsets::ObjType;
+    uint8_t const obj_type_raw = ReadRaw<uint8_t>(obj_type_ptr);
     ObjectType const obj_type = static_cast<ObjectType>(obj_type_raw);
 
     // HADESMEM_DETAIL_TRACE_FORMAT_A("guid: %#018" PRIx64 ", obj_ptr: %#10"
@@ -84,20 +89,20 @@ struct ThisT {
     HADESMEM_DETAIL_ASSERT(obj_type_raw <=
                            static_cast<uint8_t>(ObjectType::CORPSE));
 
-    std::unique_ptr<phlipbot::WowObject> obj = nullptr;
+    std::unique_ptr<WowObject> obj = nullptr;
 
     if (obj_type == ObjectType::NONE) {
-      obj = std::make_unique<phlipbot::WowObject>(guid, obj_ptr);
+      obj = make_unique<WowObject>(guid, obj_ptr);
     } else if (obj_type == ObjectType::ITEM) {
-      obj = std::make_unique<phlipbot::WowItem>(guid, obj_ptr);
+      obj = make_unique<WowItem>(guid, obj_ptr);
     } else if (obj_type == ObjectType::CONTAINER) {
-      obj = std::make_unique<phlipbot::WowContainer>(guid, obj_ptr);
+      obj = make_unique<WowContainer>(guid, obj_ptr);
     } else if (obj_type == ObjectType::UNIT) {
-      obj = std::make_unique<phlipbot::WowUnit>(guid, obj_ptr);
+      obj = make_unique<WowUnit>(guid, obj_ptr);
     } else if (obj_type == ObjectType::PLAYER) {
-      obj = std::make_unique<phlipbot::WowPlayer>(guid, obj_ptr);
+      obj = make_unique<WowPlayer>(guid, obj_ptr);
     } else if (obj_type == ObjectType::GAMEOBJ) {
-      obj = std::make_unique<phlipbot::WowGameObject>(guid, obj_ptr);
+      obj = make_unique<WowGameObject>(guid, obj_ptr);
     } else if (obj_type == ObjectType::DYNOBJ) {
       // skip
     } else if (obj_type == ObjectType::CORPSE) {
@@ -106,8 +111,7 @@ struct ThisT {
       // unreachable
     }
 
-    phlipbot::ObjectManager& omgr = phlipbot::ObjectManager::Get();
-    auto& guid_obj_cache = omgr.guid_obj_cache;
+    auto& guid_obj_cache = ObjectManager::Get().guid_obj_cache;
 
     if (obj) {
       // cache takes ownership of handle
@@ -119,11 +123,11 @@ struct ThisT {
   }
 };
 
-static inline uint32_t ClntObjMgr__EnumVisibleObjects(uint32_t filter)
+inline uint32_t ClntObjMgr__EnumVisibleObjects(uint32_t filter)
 {
   auto const enumVisibleObjectsFn =
     reinterpret_cast<ClntObjMgr__EnumVisibleObjects_Fn>(
-      phlipbot::offsets::Functions::ClntObjMgr__EnumVisibleObjects);
+      FunctionOffsets::ClntObjMgr__EnumVisibleObjects);
 
   auto original_callback_ptr = &ThisT::ClntObjMgr__EnumVisibleObjects_Callback;
   auto const callback_ptr =
@@ -131,6 +135,7 @@ static inline uint32_t ClntObjMgr__EnumVisibleObjects(uint32_t filter)
       &original_callback_ptr);
 
   return (enumVisibleObjectsFn)(callback_ptr, filter);
+}
 }
 
 
@@ -141,15 +146,15 @@ Guid ObjectManager::GetPlayerGuid() const
   return ClntObjMgr__GetActivePlayer();
 }
 
-boost::optional<WowPlayer*> ObjectManager::GetPlayer()
+optional<WowPlayer*> ObjectManager::GetPlayer()
 {
   Guid player_guid = GetPlayerGuid();
-  if (player_guid == 0) return boost::none;
+  if (player_guid == 0) return none;
 
   auto o_obj = GetObjByGuid(player_guid);
-  if (!o_obj) return boost::none;
+  if (!o_obj) return none;
 
-  auto obj = *o_obj;
+  auto obj = o_obj.value();
   HADESMEM_DETAIL_ASSERT(obj->GetObjectType() == ObjectType::PLAYER);
 
   return dynamic_cast<WowPlayer*>(obj);
@@ -157,8 +162,6 @@ boost::optional<WowPlayer*> ObjectManager::GetPlayer()
 
 void ObjectManager::EnumVisibleObjects()
 {
-  // HADESMEM_DETAIL_TRACE_A("Updating ObjectManager objects cache");
-
   // reset the guid to obj cache
   guid_obj_cache.clear();
 
@@ -166,7 +169,7 @@ void ObjectManager::EnumVisibleObjects()
   ClntObjMgr__EnumVisibleObjects(ObjectFilter::ALL);
 }
 
-boost::optional<WowObject*> ObjectManager::GetObjByGuid(types::Guid const guid)
+optional<WowObject*> ObjectManager::GetObjByGuid(Guid const guid)
 {
   // check guid obj cache
   auto obj_iter = guid_obj_cache.find(guid);
@@ -175,7 +178,7 @@ boost::optional<WowObject*> ObjectManager::GetObjByGuid(types::Guid const guid)
   }
 
   // no obj with this guid
-  return boost::none;
+  return none;
 }
 
 template <>

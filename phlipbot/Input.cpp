@@ -1,7 +1,5 @@
 #include "Input.hpp"
 
-#include <Shlwapi.h>
-
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 

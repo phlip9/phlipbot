@@ -1,20 +1,19 @@
 #include "WowContainer.hpp"
 
 #include <iomanip>
-#include <iostream>
 
-#include "wow_constants.hpp"
+using std::ostream;
 
-using namespace phlipbot::types;
+using phlipbot::offsets::Descriptors;
 
 namespace phlipbot
 {
 uint32_t WowContainer::GetItemId() const
 {
-  return GetDescriptor<uint32_t>(offsets::Descriptors::ContainerId);
+  return GetDescriptor<uint32_t>(Descriptors::ContainerId);
 }
 
-void WowContainer::PrintToStream(std::ostream& os) const
+void WowContainer::PrintToStream(ostream& os) const
 {
   os << std::hex << std::setfill('0');
   os << "{ type: WowContainer";

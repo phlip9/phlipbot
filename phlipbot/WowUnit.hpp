@@ -3,32 +3,30 @@
 #include <vector>
 
 #include "WowObject.hpp"
-#include "memory.hpp"
-#include "wow_constants.hpp"
 
 namespace phlipbot
 {
 struct WowUnit : WowObject {
 public:
-  explicit WowUnit(types::Guid const guid, uintptr_t const base_ptr)
+  explicit WowUnit(Guid const guid, uintptr_t const base_ptr)
     : WowObject(guid, base_ptr)
   {
   }
   WowUnit(const WowUnit& obj) = default;
   virtual ~WowUnit() = default;
 
-  inline types::CMovementData* GetMovement() const
+  inline CMovementData* GetMovement() const
   {
     uintptr_t move_data_ptr =
       base_ptr +
       static_cast<ptrdiff_t>(offsets::Descriptors::Unit__CMovementData);
 
-    return reinterpret_cast<types::CMovementData*>(move_data_ptr);
+    return reinterpret_cast<CMovementData*>(move_data_ptr);
   }
 
-  inline types::Guid GetSummonedByGuid() const
+  inline Guid GetSummonedByGuid() const
   {
-    return GetDescriptor<types::Guid>(offsets::Descriptors::SummonedByGuid);
+    return GetDescriptor<Guid>(offsets::Descriptors::SummonedByGuid);
   }
 
   inline uint32_t GetNpcId() const
@@ -49,13 +47,13 @@ public:
   inline bool GetIsTagged() const
   {
     uint32_t const dynamic_flags = GetDynamicFlags();
-    return (dynamic_flags & types::DynamicFlags::tagged) != 0;
+    return (dynamic_flags & DynamicFlags::tagged) != 0;
   }
 
   inline bool GetIsLootable() const
   {
     uint32_t const dynamic_flags = GetDynamicFlags();
-    return (dynamic_flags & types::DynamicFlags::isDeadMobMine) != 0;
+    return (dynamic_flags & DynamicFlags::isDeadMobMine) != 0;
   }
 
   // TODO(phlip9): debug health, mana, rage, targetguid
@@ -99,9 +97,9 @@ public:
     return GetDescriptor<uint32_t>(offsets::Descriptors::Rage) / 10;
   }
 
-  inline types::Guid GetTargetGuid() const
+  inline Guid GetTargetGuid() const
   {
-    return GetDescriptor<types::Guid>(offsets::Descriptors::TargetGuid);
+    return GetDescriptor<Guid>(offsets::Descriptors::TargetGuid);
   }
 
   inline uint32_t GetCastingSpellId() const
@@ -118,9 +116,7 @@ public:
   // bool GetIsCritter();
 
   virtual std::string GetName() const override;
-
-  virtual phlipbot::types::ObjectType GetObjectType() const override;
-
+  virtual ObjectType GetObjectType() const override;
   virtual void PrintToStream(std::ostream& os) const override;
 
   std::vector<uint32_t> GetBuffIds() const;

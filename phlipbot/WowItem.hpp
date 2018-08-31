@@ -1,16 +1,12 @@
 #pragma once
 
-#include <string>
-
-#include "wow_constants.hpp"
-
 #include "WowObject.hpp"
 
 namespace phlipbot
 {
 struct WowItem : WowObject {
 public:
-  explicit WowItem(types::Guid const guid, uintptr_t const base_ptr)
+  explicit WowItem(Guid const guid, uintptr_t const base_ptr)
     : WowObject(guid, base_ptr)
   {
   }
@@ -23,20 +19,17 @@ public:
 
   inline uint32_t GetStackCount() const
   {
-    return GetDescriptor<uint32_t>(
-      phlipbot::offsets::Descriptors::ItemStackCount);
+    return GetDescriptor<uint32_t>(offsets::Descriptors::ItemStackCount);
   }
 
   inline uint32_t GetDurability() const
   {
-    return GetDescriptor<uint32_t>(
-      phlipbot::offsets::Descriptors::ItemDurability);
+    return GetDescriptor<uint32_t>(offsets::Descriptors::ItemDurability);
   }
 
   inline uint32_t GetMaxDurability() const
   {
-    return GetDescriptor<uint32_t>(
-      phlipbot::offsets::Descriptors::ItemMaxDurability);
+    return GetDescriptor<uint32_t>(offsets::Descriptors::ItemMaxDurability);
   }
 
   inline float GetDurabilityPercent() const
@@ -48,10 +41,10 @@ public:
 
   virtual std::string GetName() const override;
 
-  virtual phlipbot::types::ObjectType GetObjectType() const override;
+  virtual ObjectType GetObjectType() const override;
 
   virtual void PrintToStream(std::ostream& os) const override;
 
-  phlipbot::types::ItemQuality GetQuality() const;
+  ItemQuality GetQuality() const;
 };
 }

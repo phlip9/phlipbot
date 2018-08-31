@@ -6,8 +6,6 @@
 
 namespace phlipbot
 {
-namespace types
-{
 using Guid = uint64_t;
 
 struct Vec2 {
@@ -252,7 +250,6 @@ enum class CtmType : uint32_t {
   Attack         = 0x10,
   Idle           = 0x13,
 };
-}
 
 namespace offsets
 {
@@ -337,7 +334,7 @@ uintptr_t const
   DBCache__ItemStats_C = 0x00C0E2A0;
 }
 
-namespace ItemStats
+namespace ItemStatsOffsets
 {
 ptrdiff_t const
   Name    = 0x8,

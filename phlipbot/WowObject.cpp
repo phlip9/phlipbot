@@ -7,15 +7,17 @@
 #include <sstream>
 #include <string>
 
-using namespace phlipbot::types;
+using std::ostream;
+using std::ostringstream;
+using std::string;
 
 namespace phlipbot
 {
-std::string WowObject::GetName() const { return ""; }
+string WowObject::GetName() const { return ""; }
 
 ObjectType WowObject::GetObjectType() const { return ObjectType::NONE; }
 
-void WowObject::PrintToStream(std::ostream& os) const
+void WowObject::PrintToStream(ostream& os) const
 {
   os << std::hex << std::setfill('0');
   os << "{ type: WowObject";
@@ -24,14 +26,14 @@ void WowObject::PrintToStream(std::ostream& os) const
   os << " }";
 }
 
-std::string WowObject::ToString() const
+string WowObject::ToString() const
 {
-  std::ostringstream oss;
+  ostringstream oss;
   PrintToStream(oss);
   return oss.str();
 }
 
-std::ostream& operator<<(std::ostream& os, WowObject const* obj)
+ostream& operator<<(ostream& os, WowObject const* obj)
 {
   obj->PrintToStream(os);
   return os;
