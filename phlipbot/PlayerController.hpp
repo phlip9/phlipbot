@@ -1,12 +1,13 @@
 #pragma once
 
+#include "ObjectManager.hpp"
 #include "PID.hpp"
 #include "wow_constants.hpp"
 
 namespace phlipbot
 {
 struct PlayerController {
-  explicit PlayerController() noexcept;
+  explicit PlayerController(ObjectManager& om) noexcept;
   ~PlayerController() = default;
 
   PlayerController(PlayerController const&) = delete;
@@ -21,8 +22,10 @@ struct PlayerController {
 
   enum class FacingType { Facing, TargetPoint };
 
+  ObjectManager& objmgr;
+
   float facing_setpoint{0.0f};
-  Vec3 facing_target_setpoint{0,0,0};
+  Vec3 facing_target_setpoint{0, 0, 0};
   PID facing_controller{};
 
   bool enabled{false};

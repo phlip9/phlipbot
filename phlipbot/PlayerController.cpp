@@ -6,8 +6,6 @@
 
 #include <hadesmem/detail/assert.hpp>
 
-#include "ObjectManager.hpp"
-
 using std::atan2f;
 
 using boost::math::float_constants::pi;
@@ -16,7 +14,7 @@ using boost::math::float_constants::two_pi;
 namespace phlipbot
 {
 // TODO(phlip9): take in some config thing to set PID gains
-PlayerController::PlayerController() noexcept {}
+PlayerController::PlayerController(ObjectManager& om) noexcept : objmgr(om) {}
 
 void PlayerController::Update(float const dt)
 {
@@ -24,7 +22,6 @@ void PlayerController::Update(float const dt)
     return;
   }
 
-  auto& objmgr = ObjectManager::Get();
   auto const o_player = objmgr.GetPlayer();
   if (!o_player.has_value()) {
     return;

@@ -82,9 +82,10 @@ namespace phlipbot
 PhlipBot::PhlipBot() noexcept
   : is_render_initialized(false),
     prev_frame_time(steady_clock::now()),
+    objmgr(),
     input(),
-    player_controller(),
-    gui(player_controller)
+    player_controller(objmgr),
+    gui(objmgr, player_controller)
 {
 }
 
@@ -94,7 +95,6 @@ void PhlipBot::Update()
 {
   float const dt = UpdateClock();
 
-  auto& objmgr = ObjectManager::Get();
   if (objmgr.IsInGame()) {
     objmgr.EnumVisibleObjects();
 

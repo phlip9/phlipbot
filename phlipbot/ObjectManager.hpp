@@ -20,11 +20,10 @@ namespace phlipbot
 {
 struct ObjectManager {
 public:
-  static inline ObjectManager& Get() noexcept
-  {
-    static ObjectManager instance;
-    return instance;
-  }
+  explicit ObjectManager() = default;
+  ~ObjectManager() = default;
+  ObjectManager(const ObjectManager&) = delete;
+  ObjectManager& operator=(const ObjectManager&) = delete;
 
   inline bool IsInGame() { return static_cast<bool>(GetPlayer()); }
 
@@ -72,12 +71,6 @@ public:
   boost::optional<WowPlayer*> GetPlayer();
   boost::optional<WowObject*> GetObjByGuid(Guid const guid);
 
-  std::unordered_map<Guid, std::unique_ptr<WowObject>> guid_obj_cache;
-
-private:
-  ObjectManager() = default;
-  ~ObjectManager() = default;
-  ObjectManager(const ObjectManager&) = delete;
-  ObjectManager& operator=(const ObjectManager&) = delete;
+  std::unordered_map<Guid, std::unique_ptr<WowObject>> guid_obj_cache{};
 };
 }

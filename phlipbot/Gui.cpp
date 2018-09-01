@@ -11,8 +11,6 @@
 
 #include <hadesmem/detail/trace.hpp>
 
-#include "ObjectManager.hpp"
-
 using boost::math::float_constants::two_pi;
 
 using FacingType = phlipbot::PlayerController::FacingType;
@@ -27,7 +25,10 @@ bool& GetGuiIsVisible()
 void SetGuiIsVisible(bool val) { GetGuiIsVisible() = val; }
 void ToggleGuiIsVisible() { SetGuiIsVisible(!GetGuiIsVisible()); }
 
-Gui::Gui(PlayerController& pc) noexcept : player_controller(pc) {}
+Gui::Gui(ObjectManager& om, PlayerController& pc) noexcept
+  : objmgr(om), player_controller(pc)
+{
+}
 
 void Gui::Init(HWND const hwnd, IDirect3DDevice9* device)
 {
@@ -65,7 +66,6 @@ void Gui::Render()
   ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
 
   if (ImGui::Begin("phlipbot")) {
-    auto& objmgr = ObjectManager::Get();
     auto const o_player = objmgr.GetPlayer();
 
     if (ImGui::CollapsingHeader("ObjectManager Testing")) {

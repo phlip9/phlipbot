@@ -13,8 +13,8 @@
 using std::make_unique;
 using std::unique_ptr;
 
-using boost::optional;
 using boost::none;
+using boost::optional;
 
 using phlipbot::Guid;
 using phlipbot::ObjectManager;
@@ -45,6 +45,21 @@ using ClntObjMgr__EnumVisibleObjects_Fn = uint32_t(__fastcall*)(
 
 namespace
 {
+// A hack-ish way of passing the ObjectManager instance to
+// ClntObjMgr__EnumVisibleObjects_Callback.
+// NOTE: DO NOT USE FOR ANY OTHER REASON
+// NOTE: Obviously not threadsafe
+ObjectManager*& GetEnumVisibleCtxt() noexcept
+{
+  static ObjectManager* obj_mgr = nullptr;
+  return obj_mgr;
+}
+
+void SetEnumVisibleCtxt(ObjectManager* objmgr) noexcept
+{
+  GetEnumVisibleCtxt() = objmgr;
+}
+
 inline Guid ClntObjMgr__GetActivePlayer()
 {
   auto const getActivePlayerFn =
@@ -111,11 +126,14 @@ struct ThisT {
       // unreachable
     }
 
-    auto& guid_obj_cache = ObjectManager::Get().guid_obj_cache;
-
     if (obj) {
+      // Retrieve the callback context
+      auto* objmgr = GetEnumVisibleCtxt();
+      HADESMEM_DETAIL_ASSERT(objmgr && "SetEnumVisibleCtxt must called before "
+                                       "calling into "
+                                       "ClntObjMgr__EnumVisibleObjects");
       // cache takes ownership of handle
-      guid_obj_cache.emplace(guid, std::move(obj));
+      objmgr->guid_obj_cache.emplace(guid, std::move(obj));
     }
 
     // continue
@@ -166,7 +184,9 @@ void ObjectManager::EnumVisibleObjects()
   guid_obj_cache.clear();
 
   // Add all visible objects to the cache
+  SetEnumVisibleCtxt(this);
   ClntObjMgr__EnumVisibleObjects(ObjectFilter::ALL);
+  SetEnumVisibleCtxt(nullptr);
 }
 
 optional<WowObject*> ObjectManager::GetObjByGuid(Guid const guid)

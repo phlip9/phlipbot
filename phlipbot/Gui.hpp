@@ -4,6 +4,7 @@
 #include <d3d9.h>
 #include <stdint.h>
 
+#include "ObjectManager.hpp"
 #include "PlayerController.hpp"
 #include "wow_constants.hpp"
 
@@ -16,7 +17,7 @@ void ToggleGuiIsVisible();
 
 struct Gui final {
 public:
-  explicit Gui(PlayerController& pc) noexcept;
+  explicit Gui(ObjectManager& objmgr, PlayerController& pc) noexcept;
   ~Gui() = default;
   Gui(const Gui&) = delete;
   Gui& operator=(const Gui&) = delete;
@@ -27,6 +28,7 @@ public:
   void Shutdown();
 
   bool is_initialized{false};
+  ObjectManager& objmgr;
 
   bool player_controller_enabled{false};
   int facing_type{static_cast<int>(PlayerController::FacingType::Facing)};

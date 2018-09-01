@@ -33,6 +33,7 @@ public:
   bool is_render_initialized;
   steady_clock::time_point prev_frame_time;
 
+  ObjectManager objmgr;
   Input input;
   PlayerController player_controller;
   Gui gui;
