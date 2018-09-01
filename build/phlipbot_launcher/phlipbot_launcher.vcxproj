@@ -92,10 +92,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;STRICT;STRICT_TYPED_ITEMIDS;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ASMJIT_STATIC;ASMJIT_BUILD_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>false</ConformanceMode>
+      <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\deps\hadesmem\include\memory;$(BOOST_ROOT);..\..\deps\hadesmem\deps\asmjit\asmjit\src;..\..\deps\hadesmem\deps\udis86\udis86</AdditionalIncludeDirectories>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
