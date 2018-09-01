@@ -27,7 +27,7 @@ using phlipbot::WowPlayer;
 using phlipbot::WowUnit;
 using phlipbot::memory::ReadRaw;
 
-namespace FunctionOffsets = phlipbot::offsets::Functions;
+namespace FunctionOffsets = phlipbot::offsets::FunctionOffsets;
 namespace ObjectManagerOffsets = phlipbot::offsets::ObjectManagerOffsets;
 
 using ClntObjMgr__GetActivePlayer_Fn = Guid(__stdcall*)();

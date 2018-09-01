@@ -95,7 +95,7 @@ void PhlipBot::Update()
   float const dt = UpdateClock();
 
   auto& objmgr = ObjectManager::Get();
-  if (objmgr.IsIngame()) {
+  if (objmgr.IsInGame()) {
     objmgr.EnumVisibleObjects();
 
     player_controller.Update(dt);

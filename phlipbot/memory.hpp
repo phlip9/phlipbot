@@ -17,6 +17,13 @@ inline T ReadRaw(uintptr_t const offset)
   return t;
 }
 
+template <typename T>
+inline T& ReadRaw(uintptr_t const offset, T& t)
+{
+  std::memcpy(t, reinterpret_cast<void*>(offset), sizeof(t));
+  return t;
+}
+
 inline std::string ReadCStr(uintptr_t const offset, size_t const max_size)
 {
   char const* str_begin = reinterpret_cast<char const*>(offset);

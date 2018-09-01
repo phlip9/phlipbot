@@ -10,14 +10,14 @@ using std::string;
 
 using phlipbot::memory::ReadCStr;
 using phlipbot::memory::ReadRaw;
-using phlipbot::offsets::Descriptors;
+using phlipbot::offsets::Descriptor;
 
 namespace phlipbot
 {
 string WowGameObject::GetName() const
 {
   uintptr_t name_cache_ptr =
-    GetDescriptor<uintptr_t>(Descriptors::GameObjNamePtr);
+    GetDescriptor<uintptr_t>(Descriptor::GameObjNamePtr);
   if (!name_cache_ptr) return "";
 
   uintptr_t name_ptr = ReadRaw<uintptr_t>(name_cache_ptr + 0x8);

@@ -1,5 +1,7 @@
 #include "PID.hpp"
 
+#include <doctest.h>
+
 namespace phlipbot
 {
 PID::PID(float _gain_p, float _gain_i, float _gain_d) noexcept
@@ -24,5 +26,24 @@ float PID::Update(float const error, float const dt)
   prev_i = i;
 
   return output;
+}
+
+namespace test
+{
+TEST_CASE("PID works")
+{
+  PID pid{1, 1, 1};
+  float output = pid.Update(1.0f, 0.1f);
+
+  CHECK(output > 0.0f);
+}
+
+TEST_CASE("PID works with dt = 0")
+{
+  PID pid{1, 1, 1};
+  float output = pid.Update(1.0f, 0.0f);
+
+  CHECK(output > 0.0f);
+}
 }
 }

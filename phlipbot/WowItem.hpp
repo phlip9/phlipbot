@@ -19,17 +19,17 @@ public:
 
   inline uint32_t GetStackCount() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::ItemStackCount);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::ItemStackCount);
   }
 
   inline uint32_t GetDurability() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::ItemDurability);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::ItemDurability);
   }
 
   inline uint32_t GetMaxDurability() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::ItemMaxDurability);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::ItemMaxDurability);
   }
 
   inline float GetDurabilityPercent() const

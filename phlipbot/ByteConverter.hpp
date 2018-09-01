@@ -56,18 +56,18 @@ inline void convert<1>(char*)
 template <typename T>
 inline void apply(T* val)
 {
-  convert<sizeof(T)>((char*)(val));
+  convert<sizeof(T)>(reinterpret_cast<char*>(val));
 }
 
 template <typename T>
-inline void EndianConvert(T&)
+inline void to_le(T& val)
 {
   if (IS_BIG_ENDIAN) {
     apply<T>(&val);
   }
 }
 template <typename T>
-inline void EndianConvertReverse(T& val)
+inline void to_be(T& val)
 {
   if (!IS_BIG_ENDIAN) {
     apply<T>(&val);
@@ -75,12 +75,12 @@ inline void EndianConvertReverse(T& val)
 }
 
 template <typename T>
-void EndianConvert(T*); // will generate link error
+void to_le(T*); // will generate link error
 template <typename T>
-void EndianConvertReverse(T*); // will generate link error
+void to_be(T*); // will generate link error
 
-inline void EndianConvert(uint8_t&) {}
-inline void EndianConvert(int8_t&) {}
-inline void EndianConvertReverse(uint8_t&) {}
-inline void EndianConvertReverse(int8_t&) {}
+inline void to_le(uint8_t&) {}
+inline void to_le(int8_t&) {}
+inline void to_be(uint8_t&) {}
+inline void to_be(int8_t&) {}
 }

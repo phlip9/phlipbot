@@ -19,29 +19,29 @@ public:
   {
     uintptr_t move_data_ptr =
       base_ptr +
-      static_cast<ptrdiff_t>(offsets::Descriptors::Unit__CMovementData);
+      static_cast<ptrdiff_t>(offsets::Descriptor::Unit__CMovementData);
 
     return reinterpret_cast<CMovementData*>(move_data_ptr);
   }
 
   inline Guid GetSummonedByGuid() const
   {
-    return GetDescriptor<Guid>(offsets::Descriptors::SummonedByGuid);
+    return GetDescriptor<Guid>(offsets::Descriptor::SummonedByGuid);
   }
 
   inline uint32_t GetNpcId() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::NpcId);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::NpcId);
   }
 
   inline uint32_t GetFactionId() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::FactionId);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::FactionId);
   }
 
   inline uint32_t GetDynamicFlags() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::DynamicFlags);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::DynamicFlags);
   }
 
   inline bool GetIsTagged() const
@@ -60,12 +60,12 @@ public:
 
   inline uint32_t GetHealth() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::Health);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::Health);
   }
 
   inline uint32_t GetMaxHealth() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::MaxHealth);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::MaxHealth);
   }
 
   inline float GetHealthPercent() const
@@ -77,12 +77,12 @@ public:
 
   inline uint32_t GetMana() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::Mana);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::Mana);
   }
 
   inline uint32_t GetMaxMana() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::MaxMana);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::MaxMana);
   }
 
   inline float GetManaPercent() const
@@ -94,22 +94,22 @@ public:
 
   inline uint32_t GetRage() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::Rage) / 10;
+    return GetDescriptor<uint32_t>(offsets::Descriptor::Rage) / 10;
   }
 
   inline Guid GetTargetGuid() const
   {
-    return GetDescriptor<Guid>(offsets::Descriptors::TargetGuid);
+    return GetDescriptor<Guid>(offsets::Descriptor::TargetGuid);
   }
 
   inline uint32_t GetCastingSpellId() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::CastingSpellId);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::CastingSpellId);
   }
 
   inline uint32_t GetChannelingSpellId() const
   {
-    return GetDescriptor<uint32_t>(offsets::Descriptors::ChannelingSpellId);
+    return GetDescriptor<uint32_t>(offsets::Descriptor::ChannelingSpellId);
   }
 
   // TODO(phlip9): is critter

@@ -7,6 +7,10 @@ namespace phlipbot
 {
 struct PlayerController {
   explicit PlayerController() noexcept;
+  ~PlayerController() = default;
+
+  PlayerController(PlayerController const&) = delete;
+  PlayerController& operator=(PlayerController const&) = delete;
 
   void Update(float const dt);
   void Reset();
@@ -17,10 +21,11 @@ struct PlayerController {
 
   enum class FacingType { Facing, TargetPoint };
 
-  bool enabled{false};
-  FacingType facing_type{FacingType::Facing};
   float facing_setpoint{0.0f};
   Vec3 facing_target_setpoint{0,0,0};
   PID facing_controller{};
+
+  bool enabled{false};
+  FacingType facing_type{FacingType::Facing};
 };
 }

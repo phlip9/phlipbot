@@ -15,7 +15,7 @@ public:
 
   inline Vec3 WowGameObject::GetPosition() const
   {
-    return GetDescriptor<Vec3>(offsets::Descriptors::GameObjPos);
+    return GetDescriptor<Vec3>(offsets::Descriptor::GameObjPos);
   }
 
   // TODO(phlip9): don't think this is correct
@@ -23,7 +23,7 @@ public:
   inline types::Guid WowGameObject::GetCreatedByGuid() const
   {
     return GetDescriptor<types::Guid>(
-      offsets::Descriptors::GameObjectCreatedByGuid);
+      offsets::Descriptor::GameObjectCreatedByGuid);
   }
   */
 

@@ -10,10 +10,10 @@ using std::string;
 using phlipbot::Guid;
 using phlipbot::memory::ReadCStr;
 using phlipbot::memory::ReadRaw;
-using phlipbot::offsets::Descriptors;
+using phlipbot::offsets::Descriptor;
 
 namespace DataOffsets = phlipbot::offsets::Data;
-namespace FunctionOffsets = phlipbot::offsets::Functions;
+namespace FunctionOffsets = phlipbot::offsets::FunctionOffsets;
 namespace ItemStatsOffsets = phlipbot::offsets::ItemStatsOffsets;
 
 using DBCache__ItemStats_C__GetRecord_Fn =
@@ -43,7 +43,7 @@ namespace phlipbot
 {
 uint32_t WowItem::GetItemId() const
 {
-  return GetDescriptor<uint32_t>(Descriptors::ItemId);
+  return GetDescriptor<uint32_t>(Descriptor::ItemId);
 }
 
 string WowItem::GetName() const

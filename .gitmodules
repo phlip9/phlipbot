@@ -4,3 +4,6 @@
 [submodule "deps/imgui"]
 	path = deps/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "deps/doctest"]
+	path = deps/doctest
+	url = git@github.com:onqtam/doctest.git

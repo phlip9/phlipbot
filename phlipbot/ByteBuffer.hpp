@@ -21,6 +21,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <list>
 #include <map>
 #include <ostream>
 #include <stdint.h>
@@ -85,7 +86,7 @@ public:
   template <typename T>
   void put(size_t pos, T value)
   {
-    ByteConverter::EndianConvert(value);
+    ByteConverter::to_le(value);
     put(pos, (uint8_t*)&value, sizeof(value));
   }
 
@@ -312,9 +313,8 @@ public:
                           << ErrorBufferSize{size()}
                           << ErrorBufferItemSize{sizeof(T)});
     }
-    // throw ByteBufferException(false, pos, sizeof(T), size());
     T val = *((T const*)&_storage[pos]);
-    ByteConverter::EndianConvert(val);
+    ByteConverter::to_le(val);
     return val;
   }
 
@@ -493,7 +493,7 @@ private:
   template <typename T>
   void append(T value)
   {
-    ByteConverter::EndianConvert(value);
+    ByteConverter::to_le(value);
     append((uint8_t*)&value, sizeof(T));
   }
 

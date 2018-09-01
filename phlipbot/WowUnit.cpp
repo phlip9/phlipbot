@@ -12,14 +12,14 @@ using std::vector;
 
 using phlipbot::memory::ReadCStr;
 using phlipbot::memory::ReadRaw;
-using phlipbot::offsets::Descriptors;
+using phlipbot::offsets::Descriptor;
 namespace ObjectManagerOffsets = phlipbot::offsets::ObjectManagerOffsets;
 
 namespace phlipbot
 {
 string WowUnit::GetName() const
 {
-  uintptr_t const name_ptr = GetDescriptor<uintptr_t>(Descriptors::UnitNamePtr);
+  uintptr_t const name_ptr = GetDescriptor<uintptr_t>(Descriptor::UnitNamePtr);
   if (!name_ptr) return "";
 
   uintptr_t const str_ptr = ReadRaw<uintptr_t>(name_ptr);
@@ -36,9 +36,9 @@ vector<uint32_t> WowUnit::GetBuffIds() const
   vector<uint32_t> buffs;
 
   ptrdiff_t buff_offset = ObjectManagerOffsets::DescriptorOffset +
-                          static_cast<ptrdiff_t>(Descriptors::FirstBuff);
+                          static_cast<ptrdiff_t>(Descriptor::FirstBuff);
 
-  ptrdiff_t const next_offset = static_cast<ptrdiff_t>(Descriptors::NextBuff);
+  ptrdiff_t const next_offset = static_cast<ptrdiff_t>(Descriptor::NextBuff);
 
   uint32_t buff_id = GetRelative<uint32_t>(buff_offset);
 
@@ -56,9 +56,9 @@ vector<uint32_t> WowUnit::GetDebuffIds() const
   vector<uint32_t> debuffs;
 
   ptrdiff_t debuff_offset = ObjectManagerOffsets::DescriptorOffset +
-                            static_cast<ptrdiff_t>(Descriptors::FirstDebuff);
+                            static_cast<ptrdiff_t>(Descriptor::FirstDebuff);
 
-  ptrdiff_t const next_offset = static_cast<ptrdiff_t>(Descriptors::NextBuff);
+  ptrdiff_t const next_offset = static_cast<ptrdiff_t>(Descriptor::NextBuff);
 
   uint32_t debuff_id = GetRelative<uint32_t>(debuff_offset);
 

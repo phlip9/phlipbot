@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -20,33 +20,33 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{64FE6614-B3E0-436E-B518-5D3148967B6A}</ProjectGuid>
+    <ProjectGuid>{89F35566-01CB-4E62-9C17-05FCBBCDB992}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>phlipbot</RootNamespace>
+    <RootNamespace>phlipbotunittest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -90,19 +90,17 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;STRICT;STRICT_TYPED_ITEMIDS;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ASMJIT_STATIC;ASMJIT_BUILD_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\phlipbot;..\..\deps\hadesmem\include\memory;$(BOOST_ROOT);..\..\deps\hadesmem\deps\asmjit\asmjit\src;..\..\deps\hadesmem\deps\udis86\udis86;..\..\deps\imgui;..\..\deps\imgui\examples;..\..\deps\doctest\doctest</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>..\..\deps\doctest\doctest;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_ROOT)\lib;$(BOOST_ROOT)\stage\lib;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>shlwapi.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,11 +109,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -127,11 +125,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -145,65 +143,22 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../../phlipbot/dxhook.cpp" />
-    <ClCompile Include="../../phlipbot/Gui.cpp" />
-    <ClCompile Include="../../phlipbot/Input.cpp" />
-    <ClCompile Include="../../phlipbot/main.cpp" />
-    <ClCompile Include="../../phlipbot/ObjectManager.cpp" />
-    <ClCompile Include="../../phlipbot/PhlipBot.cpp" />
-    <ClCompile Include="../../phlipbot/WowContainer.cpp" />
-    <ClCompile Include="../../phlipbot/WowGameObject.cpp" />
-    <ClCompile Include="../../phlipbot/WowItem.cpp" />
-    <ClCompile Include="../../phlipbot/WowObject.cpp" />
-    <ClCompile Include="../../phlipbot/WowPlayer.cpp" />
-    <ClCompile Include="../../phlipbot/WowUnit.cpp" />
-    <ClCompile Include="..\..\phlipbot\ByteBuffer_test.cpp" />
-    <ClCompile Include="..\..\phlipbot\ByteConverter_test.cpp" />
-    <ClCompile Include="..\..\phlipbot\doctest_runner.cpp" />
-    <ClCompile Include="..\..\phlipbot\PID.cpp" />
-    <ClCompile Include="..\..\phlipbot\PlayerController.cpp" />
+    <ClCompile Include="..\..\phlipbot_unittest\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../../phlipbot/detour_helpers.hpp" />
-    <ClInclude Include="../../phlipbot/dxhook.hpp" />
-    <ClInclude Include="../../phlipbot/Gui.hpp" />
-    <ClInclude Include="../../phlipbot/Input.hpp" />
-    <ClInclude Include="../../phlipbot/memory.hpp" />
-    <ClInclude Include="../../phlipbot/ObjectManager.hpp" />
-    <ClInclude Include="../../phlipbot/PhlipBot.hpp" />
-    <ClInclude Include="../../phlipbot/WowContainer.hpp" />
-    <ClInclude Include="../../phlipbot/WowGameObject.hpp" />
-    <ClInclude Include="../../phlipbot/WowItem.hpp" />
-    <ClInclude Include="../../phlipbot/WowObject.hpp" />
-    <ClInclude Include="../../phlipbot/WowPlayer.hpp" />
-    <ClInclude Include="../../phlipbot/WowUnit.hpp" />
-    <ClInclude Include="../../phlipbot/wow_constants.hpp" />
-    <ClInclude Include="../../phlipbot/ByteBuffer.hpp" />
-    <ClInclude Include="../../phlipbot/ByteConverter.hpp" />
-    <ClInclude Include="../../phlipbot/WorldPacket.hpp" />
-    <ClInclude Include="..\..\phlipbot\PID.hpp" />
-    <ClInclude Include="..\..\phlipbot\PlayerController.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\deps\hadesmem\build\vs\asmjit\asmjit.vcxproj">
-      <Project>{0c721345-2478-4288-b9be-d1235c6a8f87}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\deps\hadesmem\build\vs\udis86\udis86.vcxproj">
-      <Project>{8ed308b0-d0c4-4bb6-93d8-a4b3a8085dab}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\imgui\imgui.vcxproj">
-      <Project>{f93d63c0-3cfc-4f86-86b3-e5a0d9297302}</Project>
+    <ProjectReference Include="..\phlipbot\phlipbot.vcxproj">
+      <Project>{64fe6614-b3e0-436e-b518-5d3148967b6a}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

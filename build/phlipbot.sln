@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "phlipbot", "phlipbot\phlipb
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui\imgui.vcxproj", "{F93D63C0-3CFC-4F86-86B3-E5A0D9297302}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "phlipbot_unittest", "phlipbot_unittest\phlipbot_unittest.vcxproj", "{89F35566-01CB-4E62-9C17-05FCBBCDB992}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -71,6 +73,14 @@ Global
 		{F93D63C0-3CFC-4F86-86B3-E5A0D9297302}.Release|x64.Build.0 = Release|x64
 		{F93D63C0-3CFC-4F86-86B3-E5A0D9297302}.Release|x86.ActiveCfg = Release|Win32
 		{F93D63C0-3CFC-4F86-86B3-E5A0D9297302}.Release|x86.Build.0 = Release|Win32
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Debug|x64.ActiveCfg = Debug|x64
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Debug|x64.Build.0 = Debug|x64
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Debug|x86.ActiveCfg = Debug|Win32
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Debug|x86.Build.0 = Debug|Win32
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Release|x64.ActiveCfg = Release|x64
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Release|x64.Build.0 = Release|x64
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Release|x86.ActiveCfg = Release|Win32
+		{89F35566-01CB-4E62-9C17-05FCBBCDB992}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

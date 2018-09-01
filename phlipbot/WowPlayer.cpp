@@ -23,7 +23,7 @@ using phlipbot::Vec3;
 using phlipbot::memory::ReadCStr;
 using phlipbot::memory::ReadRaw;
 
-namespace FunctionOffsets = phlipbot::offsets::Functions;
+namespace FunctionOffsets = phlipbot::offsets::FunctionOffsets;
 namespace DataOffsets = phlipbot::offsets::Data;
 
 using CGPlayer_C__ClickToMove_Fn = char(__thiscall*)(uintptr_t player,

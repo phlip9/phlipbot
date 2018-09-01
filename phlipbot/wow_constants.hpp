@@ -253,7 +253,7 @@ enum class CtmType : uint32_t {
 
 namespace offsets
 {
-namespace Functions
+namespace FunctionOffsets
 {
 uintptr_t const
   LastHardwareAction              = 0x00CF0BC8,
@@ -291,14 +291,6 @@ uintptr_t const
   CharacterCount = 0x00B42140;
 }
 
-namespace PlayerOffsets
-{
-ptrdiff_t const
-  IsChannelingDescriptor = 0x240,
-  ComboPoints1           = 0xE68,
-  ComboPoints2           = 0x1029;
-}
-
 namespace CharacterScreen
 {
 uintptr_t const
@@ -326,6 +318,7 @@ uintptr_t const
 namespace Data
 {
 uintptr_t const
+  ClntObjMgr           = 0x00B41414,
   GameVersion          = 0x00837C04,
   MapId                = 0x0084C498,
   AntiDc               = 0x00B41D98,
@@ -341,12 +334,6 @@ ptrdiff_t const
   Quality = 0x1C;
 }
 
-namespace ObjectManager
-{
-uintptr_t const
-  Pointer = 0x00B41414;
-}
-
 namespace ObjectManagerOffsets
 {
 ptrdiff_t const
@@ -358,7 +345,7 @@ ptrdiff_t const
   DescriptorOffset = 0x8;
 }
 
-enum class Descriptors : ptrdiff_t {
+enum class Descriptor : ptrdiff_t {
   GotLoot                 = 0xB4,
   SummonedByGuid          = 0x30,
   DynamicFlags            = 0x23C,

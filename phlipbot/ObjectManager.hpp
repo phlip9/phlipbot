@@ -26,7 +26,7 @@ public:
     return instance;
   }
 
-  inline bool IsIngame() { return static_cast<bool>(GetPlayer()); }
+  inline bool IsInGame() { return static_cast<bool>(GetPlayer()); }
 
   template <typename WowT>
   static bool is_obj_type(WowObject const* obj);

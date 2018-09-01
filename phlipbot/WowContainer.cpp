@@ -4,13 +4,13 @@
 
 using std::ostream;
 
-using phlipbot::offsets::Descriptors;
+using phlipbot::offsets::Descriptor;
 
 namespace phlipbot
 {
 uint32_t WowContainer::GetItemId() const
 {
-  return GetDescriptor<uint32_t>(Descriptors::ContainerId);
+  return GetDescriptor<uint32_t>(Descriptor::ContainerId);
 }
 
 void WowContainer::PrintToStream(ostream& os) const

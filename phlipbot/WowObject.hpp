@@ -18,7 +18,7 @@ struct WowObject {
   virtual ~WowObject() = default;
 
   template <typename T>
-  inline T GetDescriptor(offsets::Descriptors const desc_offset) const
+  inline T GetDescriptor(offsets::Descriptor const desc_offset) const
   {
     uintptr_t const target = base_ptr +
                              offsets::ObjectManagerOffsets::DescriptorOffset +
@@ -28,7 +28,7 @@ struct WowObject {
   }
 
   template <typename T>
-  inline void SetDescriptor(offsets::Descriptors const desc_offset, T const& t)
+  inline void SetDescriptor(offsets::Descriptor const desc_offset, T const& t)
   {
     uintptr_t const target = base_ptr +
                              offsets::ObjectManagerOffsets::DescriptorOffset +
