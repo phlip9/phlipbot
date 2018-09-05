@@ -1,9 +1,13 @@
 #include <Shlwapi.h>
+#undef max // undefine max to remove boost/sml name collision
 #include <chrono>
 #include <d3d9.h>
+#include <mutex>
+#include <queue>
 #include <thread>
 
 #include <boost/optional.hpp>
+#include <boost/sml.hpp>
 
 #include <hadesmem/detail/smart_handle.hpp>
 #include <hadesmem/detail/trace.hpp>
@@ -15,9 +19,10 @@
 #include "PhlipBot.hpp"
 #include "dxhook.hpp"
 
-// TODO(phlip9): use boost::sml or some state machine library to handle
-//               injection state transitions?
 // TODO(phlip9): use mutex + cv to wait for main thread to signal unload
+// TODO(phlip9): hook window close to ensure bot properly shuts down
+// TODO(phlip9): timeout detouring and undetouring states?
+// TODO(phlip9): handle unexpected transitions in the state machine
 
 using std::unique_ptr;
 
@@ -34,6 +39,7 @@ using phlipbot::DetourD3D9;
 using phlipbot::GetWindowFromDevice;
 using phlipbot::IDirect3DDevice9_EndScene_Fn;
 using phlipbot::IDirect3DDevice9_Reset_Fn;
+using phlipbot::IsD3D9Detoured;
 using phlipbot::PhlipBot;
 using phlipbot::UndetourD3D9;
 
@@ -118,85 +124,243 @@ unique_ptr<PhlipBot>& GetBotInstance() noexcept
   static unique_ptr<PhlipBot> bot;
   return bot;
 }
-
-// Flag to signal when Unload() has been called, so the bot can cleanly
-// shutdown on the next render frame.
-bool& GetIsShuttingDown() noexcept
-{
-  static bool is_shutting_down;
-  return is_shutting_down;
 }
-void SetIsShuttingDown(bool val) noexcept { GetIsShuttingDown() = val; }
 
-// Flag for the bot to signal when it has completely shutdown. Unload() spins
-// on this flag.
-// std::condition_variable& GetHasShutdownCV()
-//{
-//  static std::condition_variable has_shutdown_cv;
-//  return has_shutdown_cv;
-//}
-bool& GetHasShutdown() noexcept
+// The state maching for detouring the EndScene/Reset functions
+namespace detour_state_machine
 {
-  static bool has_shutdown;
-  return has_shutdown;
+namespace sml = boost::sml;
+
+// Forward Declarations
+struct debug_logger;
+struct DetourStateMachine;
+
+using LoggerPolicyT = sml::logger<debug_logger>;
+using ThreadSafePolicyT = sml::thread_safe<std::recursive_mutex>;
+using QueuePolicyT = sml::process_queue<std::queue>;
+using StateMachineT = boost::sml::
+  sm<DetourStateMachine, LoggerPolicyT, ThreadSafePolicyT, QueuePolicyT>;
+
+StateMachineT& GetDetourStateMachine() noexcept;
+
+// states
+
+// clang-format off
+struct detoured {};
+struct detouring {};
+struct shutting_down {};
+struct undetoured {};
+struct undetouring {};
+struct error_handling {};
+// clang-format on
+
+// events
+
+// clang-format off
+struct dll_load {};
+struct dll_unload {};
+struct has_shutdown {};
+struct has_undetoured {};
+struct detour_success {};
+struct detour_fail {};
+struct detoured_error {};
+// clang-format on
+
+// actions
+
+auto const undetour = []() {
+  if (IsD3D9Detoured()) {
+    UndetourD3D9();
+  }
+};
+
+auto const detour =
+  [](auto const& /* event */, auto& sm, auto& /* deps */, auto& /* subs */) {
+    Process const proc{::GetCurrentProcessId()};
+
+    // get the WoW.exe main window handle
+    auto const omain_hwnd = FindMainWindow(proc);
+    if (!omain_hwnd) {
+      HADESMEM_DETAIL_TRACE_A("ERROR: Could not find main window handle");
+      sm.process_.push(detour_fail{});
+      return;
+    }
+
+    // log the main window title
+    try {
+      LogWindowTitle(omain_hwnd.value());
+    } catch (...) {
+      HADESMEM_DETAIL_TRACE_FORMAT_A(
+        "Error: Failed to log window title: %s",
+        boost::current_exception_diagnostic_information().c_str());
+      sm.process_.push(detour_fail{});
+      return;
+    }
+
+    // hook d3d9 device reset and end scene
+    try {
+      DetourD3D9(proc, *omain_hwnd, &IDirect3DDevice9_EndScene_Detour,
+                 &IDirect3DDevice9_Reset_Detour);
+    } catch (...) {
+      HADESMEM_DETAIL_TRACE_FORMAT_A(
+        "ERROR: Failed to detour end scene and reset: %s",
+        boost::current_exception_diagnostic_information().c_str());
+      sm.process_.push(detour_fail{});
+      return;
+    }
+  };
+
+auto const log_debug = [](const char* str) {
+  return [=] { HADESMEM_DETAIL_TRACE_A(str); };
+};
+
+// state machine
+
+// defines the transition table for the detour state machine
+//
+//                             +----------+
+//                +------------> detoured +--------------+
+//                |            +---------++              |
+//                |                      |               | dll_unload
+// detour_success |                      |               |
+//                |                      |       +-------v-------+
+//                |                      |       | shutting_down |
+//                |                      |       +-------+-------+
+//          +-----+-----+                |               |
+//          | detouring |            detoured_error      | has_shutdown
+//          +-----^--+--+                |               |
+//                |  |                   |        +------v------+
+//                |  | detour_fail       +--------> undetouring |
+//                |  |                            +------+------+
+//       dll_load |  +-----------+                       |
+//                |              |                       | has_undetoured
+//                |           +--v---------+             |
+//                +-----------+ undetoured <-------------+
+//                            +------------+
+//
+struct DetourStateMachine {
+  auto operator()() const noexcept
+  {
+    using namespace boost::sml;
+
+    // clang-format off
+    return make_transition_table(
+      state<detouring>     <= *state<undetoured>     + event<dll_load>,
+      state<undetoured>    <=  state<undetoured>     + event<dll_unload>,
+                               state<detouring>      + on_entry<_> / detour,
+      state<detoured>      <=  state<detouring>      + event<detour_success>,
+      state<undetouring>   <=  state<detouring>      + event<detour_fail>,
+                               state<detouring>      + exception<_> / process(detour_fail{}),
+      state<shutting_down> <=  state<detoured>       + event<dll_unload>,
+      state<undetouring>   <=  state<detoured>       + event<detoured_error>,
+                               state<detoured>       + event<dll_load> / log_debug("Error: dll already loaded and detoured"),
+      state<undetouring>   <=  state<shutting_down>  + event<has_shutdown>,
+      state<undetoured>    <=  state<undetouring>    + event<has_undetoured>
+    );
+    // clang-format on
+  }
+};
+
+struct debug_logger {
+  template <class SM, class TEvent>
+  void log_process_event(const TEvent&)
+  {
+    HADESMEM_DETAIL_TRACE_FORMAT_A("[%s][process_event] %s\n",
+                                   sml::aux::get_type_name<SM>(),
+                                   sml::aux::get_type_name<TEvent>());
+  }
+
+  template <class SM, class TGuard, class TEvent>
+  void log_guard(const TGuard&, const TEvent&, bool result)
+  {
+    HADESMEM_DETAIL_TRACE_FORMAT_A(
+      "[%s][guard] %s %s %s\n", sml::aux::get_type_name<SM>(),
+      sml::aux::get_type_name<TGuard>(), sml::aux::get_type_name<TEvent>(),
+      (result ? "[OK]" : "[Reject]"));
+  }
+
+  template <class SM, class TAction, class TEvent>
+  void log_action(const TAction&, const TEvent&)
+  {
+    HADESMEM_DETAIL_TRACE_FORMAT_A(
+      "[%s][action] %s %s\n", sml::aux::get_type_name<SM>(),
+      sml::aux::get_type_name<TAction>(), sml::aux::get_type_name<TEvent>());
+  }
+
+  template <class SM, class TSrcState, class TDstState>
+  void log_state_change(const TSrcState& src, const TDstState& dst)
+  {
+    HADESMEM_DETAIL_TRACE_FORMAT_A("[%s][transition] %s -> %s\n",
+                                   sml::aux::get_type_name<SM>(), src.c_str(),
+                                   dst.c_str());
+  }
+};
+
+StateMachineT& GetDetourStateMachine() noexcept
+{
+  static debug_logger logger;
+  static StateMachineT sm{logger};
+  return sm;
 }
-void SetHasShutdown(bool val) noexcept { GetHasShutdown() = val; }
+}
+
 
 // Called every end scene. Handles bot lifecycle management and calling into
 // the bot main loop.
 extern "C" HRESULT WINAPI IDirect3DDevice9_EndScene_Detour(
   PatchDetourBase* detour, IDirect3DDevice9* device)
 {
+  using namespace detour_state_machine;
+  using namespace boost::sml;
+
+  auto& sm = GetDetourStateMachine();
+
+  if (sm.is(state<detouring>)) {
+    sm.process_event(detour_success{});
+  }
+
   try {
-    // Do nothing if we've already shutdown
-    if (!GetHasShutdown()) {
+    if (sm.is(state<detoured>)) {
+      auto& bot = GetBotInstance();
+      if (!bot) {
+        // initialize bot
+        bot.reset(new PhlipBot);
+        bot->Init();
+      }
+
+      // call the main bot loop
+      bot->Update();
 
       // get the current window from the directx device
       HWND const hwnd = GetWindowFromDevice(device);
 
-      // catch shutdown signal
-      if (GetIsShuttingDown()) {
-        HADESMEM_DETAIL_TRACE_A("Received Shutdown flag");
-
-        // ... shutdown stuff
-        auto& bot = GetBotInstance();
-        if (bot) {
-          bot->Shutdown(hwnd);
-          bot = nullptr;
-        }
-
-        // signal Unload that the bot has shutdown
-        SetIsShuttingDown(false);
-        SetHasShutdown(true);
-
-      } else {
-        // Run the main loop and render loop
-
-        auto& bot = GetBotInstance();
-        if (!bot) {
-          // initialize bot
-          bot.reset(new PhlipBot);
-          bot->Init();
-        }
-
-        // call the main bot loop
-        bot->Update();
-
-        if (!bot->is_render_initialized) {
-          bot->InitRender(hwnd, device);
-        }
-
-        if (bot->is_render_initialized) {
-          bot->Render(hwnd, device);
-        }
+      if (!bot->is_render_initialized) {
+        bot->InitRender(hwnd, device);
       }
+
+      if (bot->is_render_initialized) {
+        bot->Render(hwnd, device);
+      }
+    } else if (sm.is(state<shutting_down>)) {
+      HADESMEM_DETAIL_TRACE_A("in shutting_down state");
+
+      // get the current window from the directx device
+      HWND const hwnd = GetWindowFromDevice(device);
+
+      // ... shutdown stuff
+      auto& bot = GetBotInstance();
+      if (bot) {
+        bot->Shutdown(hwnd);
+        bot = nullptr;
+      }
+
+      sm.process_event(has_shutdown{});
     }
   } catch (...) {
     HADESMEM_DETAIL_TRACE_A(
       boost::current_exception_diagnostic_information().c_str());
 
-    SetIsShuttingDown(false);
-    SetHasShutdown(true);
+    sm.process_event(detoured_error{});
   }
 
   // call the original end scene
@@ -213,13 +377,27 @@ extern "C" HRESULT WINAPI IDirect3DDevice9_Reset_Detour(
 {
   HADESMEM_DETAIL_TRACE_FORMAT_A("Args: [%p] [%p]", device, pp);
 
-  // get the current window from the directx device
-  HWND const hwnd = GetWindowFromDevice(device);
+  using namespace detour_state_machine;
+  using namespace boost::sml;
 
-  // Reset the bot renderer if it's initialized
-  auto& bot = GetBotInstance();
-  if (bot && bot->is_render_initialized) {
-    bot->ResetRender(hwnd);
+  auto& sm = GetDetourStateMachine();
+
+  try {
+    if (sm.is(state<detoured>)) {
+      // get the current window from the directx device
+      HWND const hwnd = GetWindowFromDevice(device);
+
+      // Reset the bot renderer if it's initialized
+      auto& bot = GetBotInstance();
+      if (bot && bot->is_render_initialized) {
+        bot->ResetRender(hwnd);
+      }
+    }
+  } catch (...) {
+    HADESMEM_DETAIL_TRACE_A(
+      boost::current_exception_diagnostic_information().c_str());
+
+    sm.process_event(detoured_error{});
   }
 
   // call the original device reset
@@ -237,35 +415,10 @@ extern "C" __declspec(dllexport) unsigned int Load()
 {
   HADESMEM_DETAIL_TRACE_A("phlipbot dll Load() called.");
 
-  // TODO(phlip9): prevent detours from initializing until load is complete
+  using namespace detour_state_machine;
 
-  SetIsShuttingDown(false);
-  SetHasShutdown(false);
-
-  Process const process{::GetCurrentProcessId()};
-
-  // get the WoW.exe main window handle
-  auto const omain_hwnd = FindMainWindow(process);
-  if (!omain_hwnd) {
-    HADESMEM_DETAIL_TRACE_A("ERROR: Could not find main window handle");
-    return EXIT_FAILURE;
-  }
-
-  // log the main window title
-  try {
-    LogWindowTitle(omain_hwnd.value());
-  } catch (...) {
-    return EXIT_FAILURE;
-  }
-
-  // hook d3d9 device reset and end scene
-  try {
-    DetourD3D9(process, *omain_hwnd, &IDirect3DDevice9_EndScene_Detour,
-               &IDirect3DDevice9_Reset_Detour);
-  } catch (...) {
-    HADESMEM_DETAIL_TRACE_A("ERROR: Failed to detour end scene and reset");
-    return EXIT_FAILURE;
-  }
+  auto& sm = GetDetourStateMachine();
+  sm.process_event(dll_load{});
 
   return EXIT_SUCCESS;
 }
@@ -274,26 +427,28 @@ extern "C" __declspec(dllexport) unsigned int Load()
 // from the WoW.exe process.
 extern "C" __declspec(dllexport) unsigned int Unload()
 {
+  using namespace detour_state_machine;
+  using namespace boost::sml;
   using namespace std::chrono_literals;
 
   HADESMEM_DETAIL_TRACE_A("phlipbot dll Unload() called");
 
-  // signal the main thread to begin shutting down
-  SetIsShuttingDown(true);
-  SetHasShutdown(false);
+  // signal to the main thread that it's time to cleanup and shutdown
+  auto& sm = GetDetourStateMachine();
+  sm.process_event(dll_unload{});
 
-  bool is_detoured = phlipbot::IsD3D9Detoured();
-  if (is_detoured) {
-    // spin until the bot shuts down
-    while (!GetHasShutdown()) {
-      std::this_thread::sleep_for(10ms);
-    }
-
-    UndetourD3D9();
+  // TODO(phlip9): signal with mutex + cv
+  // spin until the main thread finishes cleanup
+  // (or do nothing if we're not detoured)
+  while (!sm.is(state<undetouring>) && !sm.is(state<undetoured>)) {
+    std::this_thread::sleep_for(10ms);
   }
 
-  SetIsShuttingDown(false);
-  SetHasShutdown(true);
+  // we must undetour outside of the main thread to avoid deadlock
+  if (sm.is(state<undetouring>)) {
+    undetour();
+    sm.process_event(has_undetoured{});
+  }
 
   return EXIT_SUCCESS;
 }
@@ -319,5 +474,4 @@ BOOL APIENTRY DllMain(HMODULE /* hModule */,
     break;
   }
   return TRUE;
-}
 }

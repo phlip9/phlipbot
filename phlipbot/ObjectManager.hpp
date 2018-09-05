@@ -25,7 +25,7 @@ public:
   ObjectManager(const ObjectManager&) = delete;
   ObjectManager& operator=(const ObjectManager&) = delete;
 
-  inline bool IsInGame() { return static_cast<bool>(GetPlayer()); }
+  inline bool IsInGame() { return GetPlayerGuid() != 0; }
 
   template <typename WowT>
   static bool is_obj_type(WowObject const* obj);

@@ -7,3 +7,6 @@
 [submodule "deps/doctest"]
 	path = deps/doctest
 	url = git@github.com:onqtam/doctest.git
+[submodule "deps/boost-sml"]
+	path = deps/boost-sml
+	url = git@github.com:boost-experimental/sml.git

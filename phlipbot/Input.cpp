@@ -35,6 +35,14 @@ LRESULT CALLBACK WindowProcCallback(HWND hwnd,
   // TODO(phlip9): push input messages onto threadsafe message queue and
   //               process in bot update
 
+  auto& original_wnd_proc = GetOriginalWndProc();
+
+  // TODO(phlip9): signal shutdown to detour state machine
+  //if (msg == WM_CLOSE && original_wnd_proc &&
+  //    CallWindowProc(original_wnd_proc, hwnd, msg, wParam, lParam)) {
+  //  return true;
+  //}
+
   // Shift+F9 to toggle GUI visibility
   bool const shift_down = !!(::GetAsyncKeyState(VK_SHIFT) & 0x8000);
   if (msg == WM_KEYDOWN && !((lParam >> 30) & 0x1) && wParam == VK_F9 &&
@@ -51,8 +59,6 @@ LRESULT CALLBACK WindowProcCallback(HWND hwnd,
   }
 
   // Fall through to the original handler
-  auto& original_wnd_proc = GetOriginalWndProc();
-
   if (original_wnd_proc &&
       CallWindowProc(original_wnd_proc, hwnd, msg, wParam, lParam)) {
     return true;
