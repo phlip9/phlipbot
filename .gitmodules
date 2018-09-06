@@ -10,3 +10,6 @@
 [submodule "deps/boost-sml"]
 	path = deps/boost-sml
 	url = git@github.com:boost-experimental/sml.git
+[submodule "deps/recastnavigation"]
+	path = deps/recastnavigation
+	url = git@github.com:recastnavigation/recastnavigation.git
