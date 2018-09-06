@@ -23,6 +23,14 @@
 // TODO(phlip9): hook window close to ensure bot properly shuts down
 // TODO(phlip9): timeout detouring and undetouring states?
 // TODO(phlip9): handle unexpected transitions in the state machine
+// TODO(phlip9): might need coarser locking around state machine. currently just
+//               locking around process_event using the default thread_safety
+//               policy, but should probably hold a lock on the whole state
+//               machine when we check the current state to do something, like
+//                 sm.is_state_and_lock_acquire(state<____>, [] {
+//                   ... lambda runs if currently in state and also holds lock
+//                 });
+//               it's also not clear if sm.process_.push() is synchronized...
 
 using std::unique_ptr;
 
@@ -208,11 +216,15 @@ auto const detour =
       sm.process_.push(detour_fail{});
       return;
     }
+
+    sm.process_.push(detour_success{});
   };
 
-auto const log_debug = [](const char* str) {
-  return [=] { HADESMEM_DETAIL_TRACE_A(str); };
-};
+// auto const log_unexpected =
+//  [](auto const& ev, auto& /* sm */, auto& /* deps */, auto& /* subs */) {
+//    HADESMEM_DETAIL_TRACE_FORMAT_A("Warn: [unexpected_event] %s",
+//                                   typeid(ev).name());
+//  };
 
 // state machine
 
@@ -253,7 +265,6 @@ struct DetourStateMachine {
                                state<detouring>      + exception<_> / process(detour_fail{}),
       state<shutting_down> <=  state<detoured>       + event<dll_unload>,
       state<undetouring>   <=  state<detoured>       + event<detoured_error>,
-                               state<detoured>       + event<dll_load> / log_debug("Error: dll already loaded and detoured"),
       state<undetouring>   <=  state<shutting_down>  + event<has_shutdown>,
       state<undetoured>    <=  state<undetouring>    + event<has_undetoured>
     );
@@ -265,7 +276,7 @@ struct debug_logger {
   template <class SM, class TEvent>
   void log_process_event(const TEvent&)
   {
-    HADESMEM_DETAIL_TRACE_FORMAT_A("[%s][process_event] %s\n",
+    HADESMEM_DETAIL_TRACE_FORMAT_A("[%s][process_event] %s",
                                    sml::aux::get_type_name<SM>(),
                                    sml::aux::get_type_name<TEvent>());
   }
@@ -274,7 +285,7 @@ struct debug_logger {
   void log_guard(const TGuard&, const TEvent&, bool result)
   {
     HADESMEM_DETAIL_TRACE_FORMAT_A(
-      "[%s][guard] %s %s %s\n", sml::aux::get_type_name<SM>(),
+      "[%s][guard] %s %s %s", sml::aux::get_type_name<SM>(),
       sml::aux::get_type_name<TGuard>(), sml::aux::get_type_name<TEvent>(),
       (result ? "[OK]" : "[Reject]"));
   }
@@ -283,14 +294,14 @@ struct debug_logger {
   void log_action(const TAction&, const TEvent&)
   {
     HADESMEM_DETAIL_TRACE_FORMAT_A(
-      "[%s][action] %s %s\n", sml::aux::get_type_name<SM>(),
+      "[%s][action] %s %s", sml::aux::get_type_name<SM>(),
       sml::aux::get_type_name<TAction>(), sml::aux::get_type_name<TEvent>());
   }
 
   template <class SM, class TSrcState, class TDstState>
   void log_state_change(const TSrcState& src, const TDstState& dst)
   {
-    HADESMEM_DETAIL_TRACE_FORMAT_A("[%s][transition] %s -> %s\n",
+    HADESMEM_DETAIL_TRACE_FORMAT_A("[%s][transition] %s -> %s",
                                    sml::aux::get_type_name<SM>(), src.c_str(),
                                    dst.c_str());
   }
@@ -314,10 +325,6 @@ extern "C" HRESULT WINAPI IDirect3DDevice9_EndScene_Detour(
   using namespace boost::sml;
 
   auto& sm = GetDetourStateMachine();
-
-  if (sm.is(state<detouring>)) {
-    sm.process_event(detour_success{});
-  }
 
   try {
     if (sm.is(state<detoured>)) {
@@ -418,6 +425,9 @@ extern "C" __declspec(dllexport) unsigned int Load()
   using namespace detour_state_machine;
 
   auto& sm = GetDetourStateMachine();
+
+  sm.process_event(detoured_error{});
+
   sm.process_event(dll_load{});
 
   return EXIT_SUCCESS;
