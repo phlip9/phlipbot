@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\navigation">
+      <UniqueIdentifier>{6100b60a-80fa-4d1a-b2e9-32c2bae31f4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\navigation">
+      <UniqueIdentifier>{588c11ce-7061-405e-a1f7-6d47f9a6c04b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../../phlipbot/main.cpp">
@@ -65,6 +71,12 @@
     </ClCompile>
     <ClCompile Include="..\..\phlipbot\ByteBuffer_test.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\phlipbot\navigation\MoveMap.cpp">
+      <Filter>Source Files\navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\phlipbot\navigation\PathFinder.cpp">
+      <Filter>Source Files\navigation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -124,6 +136,15 @@
     </ClInclude>
     <ClInclude Include="..\..\phlipbot\PlayerController.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\phlipbot\navigation\MoveMap.hpp">
+      <Filter>Header Files\navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\phlipbot\navigation\MoveMapSharedDefines.hpp">
+      <Filter>Header Files\navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\phlipbot\navigation\PathFinder.hpp">
+      <Filter>Header Files\navigation</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
