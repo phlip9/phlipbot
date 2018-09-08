@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
@@ -16,20 +18,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MOVE_MAP_SHARED_DEFINES_H
-#define _MOVE_MAP_SHARED_DEFINES_H
+#include <stdint.h>
 
-#include "../recastnavigation/Detour/Include/DetourNavMesh.h"
-#include "Platform/Define.h"
+#include <DetourNavMesh.h>
 
 #define MMAP_MAGIC 0x4d4d4150 // 'MMAP'
 #define MMAP_VERSION 3
+#define MMAP_VERSION_STR "3"
 
 struct MmapTileHeader {
-  uint32 mmapMagic;
-  uint32 dtVersion;
-  uint32 mmapVersion;
-  uint32 size;
+  uint32_t mmapMagic;
+  uint32_t dtVersion;
+  uint32_t mmapVersion;
+  uint32_t size;
   bool usesLiquids : 1;
 
   MmapTileHeader()
@@ -54,5 +55,3 @@ enum NavTerrain {
   NAV_UNUSED4 = 0x80
   // we only have 8 bits
 };
-
-#endif // _MOVE_MAP_SHARED_DEFINES_H

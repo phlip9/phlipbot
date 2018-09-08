@@ -27,7 +27,7 @@
 // TODO(phlip9): take absolute path for dll_name
 // TODO(phlip9): move SmartHandles into hadesmem/detail/smart_handle.hpp
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 using std::condition_variable;

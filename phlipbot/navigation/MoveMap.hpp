@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
@@ -16,100 +18,93 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MOVE_MAP_H
-#define _MOVE_MAP_H
+#include <thread>
+#include <filesystem>
+#include <memory>
+#include <mutex>
+#include <shared_mutex>
+#include <tuple>
+#include <unordered_map>
 
-#include <ace/Guard_T.h>
-#include <ace/RW_Mutex.h>
-#include <ace/Thread_Mutex.h>
+#include <boost/exception/error_info.hpp>
 
-#include "Utilities/UnorderedMapSet.h"
+#include <DetourAlloc.h>
+#include <DetourNavMesh.h>
+#include <DetourNavMeshQuery.h>
 
-#include "Detour/Include/DetourAlloc.h"
-#include "Detour/Include/DetourNavMesh.h"
-#include "Detour/Include/DetourNavMeshQuery.h"
-
-//  memory management
-inline void* dtCustomAlloc(int size, dtAllocHint /*hint*/)
-{
-  return (void*)new unsigned char[size];
-}
-
-inline void dtCustomFree(void* ptr) { delete[](unsigned char*) ptr; }
+// TODO(phlip9): make MMapManager::mmapDir configurable
 
 //  move map related classes
-namespace MMAP
+namespace phlipbot
 {
-typedef UNORDERED_MAP<uint32, dtTileRef> MMapTileSet;
-typedef UNORDERED_MAP<uint32, dtNavMeshQuery*> NavMeshQuerySet;
+using ErrorMapTile =
+  boost::error_info<struct TagErrorMap, std::tuple<int32_t, int32_t>>;
+using ErrorMapId = boost::error_info<struct TagErrorMapId, uint32_t>;
+using ErrorHeaderVersion =
+  boost::error_info<struct TagErrorHeaderVersion, uint32_t>;
+using ErrorHeaderMagic =
+  boost::error_info<struct TagErrorHeaderMagic, uint32_t>;
+using ErrorFile =
+  boost::error_info<struct TagErrorFileOpen, std::filesystem::path>;
+using ErrorDTResult = boost::error_info<struct TagErrorDTResult, uint32_t>;
+using ErrorGODisplayId =
+  boost::error_info<struct TagErrorGODisplayId, uint32_t>;
+
+using MMapTileSet = std::unordered_map<uint32_t, dtTileRef>;
+using NavMeshQuerySet =
+  std::unordered_map<std::thread::id, std::unique_ptr<dtNavMeshQuery>>;
 
 // dummy struct to hold map's mmap data
 struct MMapData {
-  MMapData(dtNavMesh* mesh) : navMesh(mesh) {}
-  ~MMapData()
-  {
-    for (NavMeshQuerySet::iterator i = navMeshQueries.begin();
-         i != navMeshQueries.end(); ++i)
-      dtFreeNavMeshQuery(i->second);
+  MMapData(std::unique_ptr<dtNavMesh>&& mesh) : navMesh(std::move(mesh)) {}
 
-    if (navMesh) dtFreeNavMesh(navMesh);
-  }
-
-  dtNavMesh* navMesh;
+  std::unique_ptr<dtNavMesh> navMesh;
 
   // we have to use single dtNavMeshQuery for every instance, since those are
   // not thread safe
   NavMeshQuerySet navMeshQueries; // threadId to query
-  ACE_RW_Mutex navMeshQueries_lock;
+  std::shared_mutex navMeshQueries_lock;
   MMapTileSet mmapLoadedTiles; // maps [map grid coords] to [dtTile]
-  ACE_Thread_Mutex tilesLoading_lock;
+  std::mutex tilesLoading_lock;
 };
 
-typedef UNORDERED_MAP<uint32, MMapData*> MMapDataSet;
+using MMapDataSet = std::unordered_map<uint32_t, std::unique_ptr<MMapData>>;
 
 // singelton class
 // holds all all access to mmap loading unloading and meshes
 class MMapManager
 {
 public:
-  MMapManager() : loadedTiles(0) {}
-  ~MMapManager();
+  explicit MMapManager(std::filesystem::path const& _mmapDir)
+    : mmapDir(_mmapDir), loadedTiles(0)
+  {
+  }
 
-  bool loadMap(uint32 mapId, int32 x, int32 y);
-  bool loadGameObject(uint32 displayId);
-  bool unloadMap(uint32 mapId, int32 x, int32 y);
-  bool unloadMap(uint32 mapId);
-  bool unloadMapInstance(uint32 mapId, uint32 instanceId);
+  bool loadMap(uint32_t mapId, int32_t x, int32_t y);
+  bool loadGameObject(uint32_t displayId);
+  bool unloadMap(uint32_t mapId, int32_t x, int32_t y);
+  bool unloadMap(uint32_t mapId);
+  bool unloadMapInstance(uint32_t mapId, std::thread::id tid);
 
   // The returned [dtNavMeshQuery const*] is NOT threadsafe
   // Returns a NavMeshQuery valid for current thread only.
-  dtNavMeshQuery const* GetNavMeshQuery(uint32 mapId);
-  dtNavMeshQuery const* GetModelNavMeshQuery(uint32 displayId);
-  dtNavMesh const* GetNavMesh(uint32 mapId);
+  dtNavMeshQuery const* GetNavMeshQuery(uint32_t mapId);
+  dtNavMeshQuery const* GetModelNavMeshQuery(uint32_t displayId);
+  dtNavMesh const* GetNavMesh(uint32_t mapId);
 
-  uint32 getLoadedTilesCount() const { return loadedTiles; }
-  uint32 getLoadedMapsCount() const { return loadedMMaps.size(); }
+  uint32_t getLoadedTilesCount() const { return loadedTiles; }
+  uint32_t getLoadedMapsCount() const { return loadedMMaps.size(); }
 
 private:
-  bool loadMapData(uint32 mapId);
-  uint32 packTileID(int32 x, int32 y);
+  bool loadMapData(uint32_t mapId);
+  uint32_t packTileID(int32_t x, int32_t y);
+
+  std::filesystem::path mmapDir;
 
   MMapDataSet loadedMMaps;
-  ACE_RW_Mutex loadedMMaps_lock;
+  std::shared_mutex loadedMMaps_lock;
   MMapDataSet loadedModels;
-  uint32 loadedTiles;
-  ACE_Thread_Mutex lockForModels;
-};
-
-// static class
-// holds all mmap global data
-// access point to MMapManager singelton
-class MMapFactory
-{
-public:
-  static MMapManager* createOrGetMMapManager();
-  static void clear();
+  uint32_t loadedTiles;
+  std::mutex lockForModels;
 };
 }
-
-#endif // _MOVE_MAP_H
