@@ -13,3 +13,6 @@
 [submodule "deps/recastnavigation"]
 	path = deps/recastnavigation
 	url = git@github.com:recastnavigation/recastnavigation.git
+[submodule "deps/glm"]
+	path = deps/glm
+	url = git@github.com:g-truc/glm.git

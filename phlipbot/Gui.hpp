@@ -40,7 +40,7 @@ public:
   float ctm_dy{0.0f};
 
   float set_facing{0.0f};
-  Vec3 target_pos{};
+  vec3 target_pos{};
 
   uint32_t input_flags{0};
   bool control_toggle{false};

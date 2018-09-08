@@ -36,8 +36,8 @@ void PlayerController::Update(float const dt)
   } else if (facing_type == FacingType::TargetPoint) {
     // Get the angle between the player position and target position
     auto const& pos = player->GetMovement()->position;
-    float const dy = facing_target_setpoint.Y - pos.Y;
-    float const dx = facing_target_setpoint.X - pos.X;
+    float const dy = facing_target_setpoint.y - pos.y;
+    float const dx = facing_target_setpoint.x - pos.x;
     _facing_setpoint = pi - atan2f(dy, -dx);
   } else {
     HADESMEM_DETAIL_ASSERT(false && "invalid FacingType");
@@ -75,7 +75,7 @@ void PlayerController::SetFacingSetpoint(float const facing)
   facing_type = FacingType::Facing;
 }
 
-void PlayerController::SetFacingTargetSetpoint(Vec3 const& target_point)
+void PlayerController::SetFacingTargetSetpoint(vec3 const& target_point)
 {
   facing_target_setpoint = target_point;
   facing_type = FacingType::TargetPoint;

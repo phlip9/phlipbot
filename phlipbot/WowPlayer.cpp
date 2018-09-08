@@ -19,7 +19,7 @@ using boost::math::float_constants::pi;
 
 using phlipbot::CMovementData;
 using phlipbot::Guid;
-using phlipbot::Vec3;
+using phlipbot::vec3;
 using phlipbot::memory::ReadCStr;
 using phlipbot::memory::ReadRaw;
 
@@ -29,7 +29,7 @@ namespace DataOffsets = phlipbot::offsets::Data;
 using CGPlayer_C__ClickToMove_Fn = char(__thiscall*)(uintptr_t player,
                                                      uint32_t const ctm_type,
                                                      Guid const* target_guid,
-                                                     Vec3 const* target_pos,
+                                                     vec3 const* target_pos,
                                                      float const precision);
 
 using CMovement__SetFacing_Fn = uint32_t(__thiscall*)(CMovementData* move_ptr,
@@ -86,14 +86,14 @@ ObjectType WowPlayer::GetObjectType() const { return ObjectType::PLAYER; }
 
 void WowPlayer::PrintToStream(ostream& os) const
 {
-  Vec3 const& pos = GetMovement()->position;
+  vec3 const& pos = GetMovement()->position;
 
   os << std::hex << std::setfill('0');
   os << "{ type: WowPlayer";
   os << ", guid: 0x" << std::setw(16) << guid;
   os << ", base_ptr: 0x" << std::setw(8) << base_ptr;
   os << ", name: " << GetName();
-  os << ", position: { " << pos.X << ", " << pos.Y << ", " << pos.Z << " } ";
+  os << ", position: { " << pos.x << ", " << pos.y << ", " << pos.z << " } ";
   os << std::dec;
   os << ", npc_id: " << GetNpcId();
   os << ", faction_id: " << GetFactionId();
@@ -126,11 +126,11 @@ void WowPlayer::SetFacing(float facing_rad)
   (set_facing_fn)(GetMovement(), facing_rad);
 }
 
-void WowPlayer::SetFacing(Vec3 const& target_pos)
+void WowPlayer::SetFacing(vec3 const& target_pos)
 {
   auto const& pos = GetMovement()->position;
-  float const dy = target_pos.Y - pos.Y;
-  float const dx = target_pos.X - pos.X;
+  float const dy = target_pos.y - pos.y;
+  float const dx = target_pos.x - pos.x;
 
   float const facing_rad = pi - atan2f(dy, -dx);
 
@@ -141,7 +141,7 @@ void WowPlayer::SetFacing(Vec3 const& target_pos)
 
 bool WowPlayer::ClickToMove(CtmType const ctm_type,
                             Guid const target_guid,
-                            Vec3 const& target_pos,
+                            vec3 const& target_pos,
                             float const precision)
 {
   auto const ctm_fn = reinterpret_cast<CGPlayer_C__ClickToMove_Fn>(

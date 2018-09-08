@@ -2,37 +2,27 @@
 
 #include <stdint.h>
 
+#pragma warning(push)
+#pragma warning(disable:4201) // allow anonymous unions
+#define GLM_FORCE_SWIZZLE
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
+#pragma warning(pop)
+
 // clang-format off
 
 namespace phlipbot
 {
 using Guid = uint64_t;
 
-struct Vec2 {
-  float X;
-  float Y;
-};
-
-struct Vec3 {
-  float X;
-  float Y;
-  float Z;
-};
-
-struct Vec4 {
-  float X;
-  float Y;
-  float Z;
-  float R;
-};
+using vec2 = glm::vec2;
+using vec3 = glm::vec3;
+using vec4 = glm::vec4;
 
 struct BoundingBox {
-  float X1;
-  float Y1;
-  float Z1;
-  float X2;
-  float Y2;
-  float Z2;
+  vec3 p1;
+  vec3 p2;
 };
 
 // TODO(phlip9): generic TSLink<T>
@@ -47,19 +37,19 @@ struct CMoveSpline {
 struct CMovementData {
   TSLink move_link;        // 0x00
   TSLink transport_link;   // 0x08
-  Vec3 position;           // 0x10
+  vec3 position;           // 0x10
   float facing;            // 0x1C
   float pitch;             // 0x20
-  Vec3 surface_normal;     // 0x24
+  vec3 surface_normal;     // 0x24
   Guid guid;               // 0x30
   Guid transport_guid;     // 0x38
   uint32_t move_flags;     // 0x40
-  Vec3 anchor_position;    // 0x44
+  vec3 anchor_position;    // 0x44
   float anchor_facing;     // 0x50
   float anchor_pitch;      // 0x54
   uint32_t move_time;      // 0x58
-  Vec3 direction;          // 0x5C
-  Vec2 direction_2d;       // 0x68
+  vec3 direction;          // 0x5C
+  vec2 direction_2d;       // 0x68
   float cos_anchor_pitch;  // 0x70
   float sin_anchor_pitch;  // 0x74
   uint32_t fall_time;      // 0x78

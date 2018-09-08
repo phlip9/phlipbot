@@ -30,7 +30,7 @@ ObjectType WowGameObject::GetObjectType() const { return ObjectType::GAMEOBJ; }
 
 void WowGameObject::PrintToStream(ostream& os) const
 {
-  Vec3 pos = GetPosition();
+  vec3 pos = GetPosition();
 
   os << std::hex << std::setfill('0');
   os << "{ type: WowGameObject";
@@ -38,7 +38,7 @@ void WowGameObject::PrintToStream(ostream& os) const
   os << ", base_ptr: 0x" << std::setw(8) << base_ptr;
   os << ", name: " << GetName();
   // os << ", created_by: 0x" << std::setw(16) << GetCreatedByGuid();
-  os << ", position: { " << pos.X << ", " << pos.Y << ", " << pos.Z << " } ";
+  os << ", position: { " << pos.x << ", " << pos.y << ", " << pos.z << " } ";
   os << " }";
 }
 }

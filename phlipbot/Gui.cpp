@@ -85,8 +85,8 @@ void Gui::Render()
         if (o_player) {
           auto* player = o_player.value();
           auto player_pos = player->GetMovement()->position;
-          player_pos.X += ctm_dx;
-          player_pos.Y += ctm_dy;
+          player_pos.x += ctm_dx;
+          player_pos.y += ctm_dy;
           player->ClickToMove(CtmType::Move, 0, player_pos, ctm_precision);
         }
       }
@@ -97,10 +97,10 @@ void Gui::Render()
         auto const player_pos =
           o_player
             .map([](auto* player) { return player->GetMovement()->position; })
-            .value_or(Vec3{0, 0, 0});
+            .value_or(vec3{0, 0, 0});
 
-        ImGui::Text("Player Position: {%.3f, %.3f, %.3f}", player_pos.X,
-                    player_pos.Y, player_pos.Z);
+        ImGui::Text("Player Position: {%.3f, %.3f, %.3f}", player_pos.x,
+                    player_pos.y, player_pos.z);
       }
 
       ImGui::InputFloat3("Target Position",
