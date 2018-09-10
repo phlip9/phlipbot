@@ -90,7 +90,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;STRICT;STRICT_TYPED_ITEMIDS;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ASMJIT_STATIC;ASMJIT_BUILD_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;PHLIPBOT_EXPORTS;_WINDOWS;_USRDLL;STRICT;STRICT_TYPED_ITEMIDS;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ASMJIT_STATIC;ASMJIT_BUILD_X86;DT_POLYREF64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\phlipbot;..\..\deps\hadesmem\include\memory;$(BOOST_ROOT);..\..\deps\hadesmem\deps\asmjit\asmjit\src;..\..\deps\hadesmem\deps\udis86\udis86;..\..\deps\imgui;..\..\deps\imgui\examples;..\..\deps\doctest\doctest;..\..\deps\boost-sml\include;..\..\deps\recastnavigation\Detour\Include;..\..\deps\glm</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

@@ -19,6 +19,7 @@
 #include "PathFinder.hpp"
 
 #include <algorithm>
+#include <filesystem>
 
 #include <glm/geometric.hpp>
 
@@ -27,11 +28,15 @@
 #include <hadesmem/detail/assert.hpp>
 #include <hadesmem/detail/trace.hpp>
 
+#include <doctest.h>
+
 #define SMOOTH_PATH_STEP_SIZE 4.0f
 #define SMOOTH_PATH_SLOP 0.3f
 
 using glm::distance;
 using glm::dot;
+
+namespace fs = std::filesystem;
 
 namespace
 {
@@ -54,9 +59,9 @@ dtQueryFilter createFilter()
 namespace phlipbot
 {
 ////////////////// PathInfo //////////////////
-PathInfo::PathInfo(MMapManager& mmap, uint32_t const mapId)
-  : mmap(mmap),
-    mapId(mapId),
+PathInfo::PathInfo(MMapManager& m_mmap, uint32_t const m_mapId)
+  : m_mmap(m_mmap),
+    m_mapId(m_mapId),
     m_polyLength(0),
     m_type(PATHFIND_BLANK),
     m_useStraightPath(false),
@@ -79,7 +84,7 @@ bool PathInfo::calculate(vec3& src, vec3& dest, bool forceDest)
 {
   // A m_navMeshQuery object is not thread safe, but a same PathInfo can be
   // shared between threads. So need to get a new one.
-  m_navMeshQuery = mmap.GetNavMeshQuery(mapId);
+  m_navMeshQuery = m_mmap.GetNavMeshQuery(m_mapId);
 
   if (m_navMeshQuery) {
     m_navMesh = m_navMeshQuery->getAttachedNavMesh();
@@ -108,7 +113,7 @@ bool PathInfo::calculate(vec3& src, vec3& dest, bool forceDest)
 
   // check if destination moved - if not we can optimize something here
   // we are following old, precalculated path?
-  float dist = 0.5f; // m_sourceUnit->GetObjectBoundingRadius();
+  float dist = 0.2f; // m_sourceUnit->GetObjectBoundingRadius();
   if (inRange(oldDest, dest, dist, dist) && m_pathPoints.size() > 2) {
     // our target is not moving - we just coming closer
     // we are moving on precalculated path - enjoy the ride
@@ -132,7 +137,8 @@ dtPolyRef PathInfo::FindWalkPoly(dtNavMeshQuery const* query,
   HADESMEM_DETAIL_ASSERT(query);
 
   // WARNING : Nav mesh coords are Y, Z, X (and not X, Y, Z)
-  float extents[3] = {5.0f, zSearchDist, 5.0f};
+  //float extents[3] = {5.0f, zSearchDist, 5.0f};
+  float extents[3] = {10000.0f, 10000.0f + zSearchDist, 10000.0f};
 
   // Default recastnavigation method
   dtPolyRef polyRef;
@@ -900,5 +906,38 @@ float PathInfo::dist3DSqr(vec3 const& p1, vec3 const& p2) const
 {
   vec3 d = p1 - p2;
   return dot(d, d);
+}
+
+namespace test
+{
+TEST_CASE("PathFinder should be able to compute a path in Elwynn Forest")
+{
+  // Eastern Kingdoms
+  uint32_t map_id = 0;
+  // Elwynn Forest
+  int32_t x = 32;
+  int32_t y = 48;
+
+  vec3 start{-8949.95f, -132.493f, 83.5312f};
+  vec3 end{-9046.507f, -45.71962f, 88.33186f};
+
+  char tile_filename[20];
+  snprintf(tile_filename, sizeof(tile_filename), "%03u%02i%02i.mmtile", map_id,
+           y, x);
+
+  fs::path mmap_dir = "C:\\MaNGOS\\data\\__mmaps";
+  // Elwynn Forest tile
+  fs::path tile_path = mmap_dir / tile_filename;
+
+  REQUIRE(fs::exists(mmap_dir));
+  REQUIRE(fs::exists(tile_path));
+
+  MMapManager mmap{mmap_dir};
+  CHECK(mmap.loadMap(map_id, x, y));
+
+  PathInfo path_info{mmap, map_id};
+
+  CHECK(path_info.calculate(start, end, false));
+}
 }
 }

@@ -90,11 +90,10 @@ enum PathType {
 class PathInfo
 {
 public:
-  explicit PathInfo(MMapManager& mmgr, uint32_t const mapId);
+  explicit PathInfo(MMapManager& mmgr, uint32_t const m_mapId);
 
   // return value : true if new path was calculated
-  bool
-  calculate(vec3& src, vec3& dest, bool forceDest = false);
+  bool calculate(vec3& src, vec3& dest, bool forceDest = false);
 
   void setUseStrightPath(bool useStraightPath)
   {
@@ -104,17 +103,11 @@ public:
 
   inline void getStartPosition(vec3& pos) { pos = m_startPosition; }
   inline void getEndPosition(vec3& pos) { pos = m_endPosition; }
-  inline void getActualEndPosition(vec3& pos)
-  {
-    pos = m_actualEndPosition;
-  }
+  inline void getActualEndPosition(vec3& pos) { pos = m_actualEndPosition; }
 
   inline vec3 getStartPosition() const { return m_startPosition; }
   inline vec3 getEndPosition() const { return m_endPosition; }
-  inline vec3 getActualEndPosition() const
-  {
-    return m_actualEndPosition;
-  }
+  inline vec3 getActualEndPosition() const { return m_actualEndPosition; }
 
   inline PointsArray& getFullPath() { return m_pathPoints; }
   inline PointsArray const& getPath() const { return m_pathPoints; }
@@ -123,9 +116,9 @@ public:
   float Length() const;
 
 private:
-  MMapManager& mmap;
+  MMapManager& m_mmap;
 
-  uint32_t const mapId;
+  uint32_t const m_mapId;
 
   dtPolyRef m_pathPolyRefs[MAX_PATH_LENGTH]; // array of detour polygon
                                              // references
@@ -142,7 +135,7 @@ private:
   vec3 m_startPosition; // {x, y, z} of current location
   vec3 m_endPosition; // {x, y, z} of the destination
   vec3 m_actualEndPosition; // {x, y, z} of the closest possible point
-                                      // to given destination
+                            // to given destination
   const dtNavMesh* m_navMesh; // the nav mesh
   const dtNavMeshQuery* m_navMeshQuery; // the nav mesh query used to find the
                                         // path
@@ -151,10 +144,7 @@ private:
   dtQueryFilter m_filter; // use single filter for all movements, update it when
                           // needed
 
-  inline void setStartPosition(vec3 const& point)
-  {
-    m_startPosition = point;
-  }
+  inline void setStartPosition(vec3 const& point) { m_startPosition = point; }
   inline void setEndPosition(vec3 const& point)
   {
     m_actualEndPosition = point;
@@ -170,10 +160,7 @@ private:
     m_polyLength = 0;
     m_pathPoints.clear();
   }
-  bool inRange(vec3 const& p1,
-               vec3 const& p2,
-               float r,
-               float h) const;
+  bool inRange(vec3 const& p1, vec3 const& p2, float r, float h) const;
   float dist3DSqr(vec3 const& p1, vec3 const& p2) const;
   bool inRangeYZX(float const* v1, float const* v2, float r, float h) const;
 
@@ -187,8 +174,7 @@ private:
   getPolyByLocation(float const* point, float* distance, uint32_t flags = 0);
   bool HaveTiles(vec3 const& p) const;
 
-  void
-  BuildPolyPath(vec3 const& startPos, vec3 const& endPos);
+  void BuildPolyPath(vec3 const& startPos, vec3 const& endPos);
   void BuildPointPath(float const* startPoint, float const* endPoint);
   void BuildShortcut();
   // void BuildUnderwaterPath();

@@ -72,9 +72,8 @@ using MMapDataSet = std::unordered_map<uint32_t, std::unique_ptr<MMapData>>;
 
 // singelton class
 // holds all all access to mmap loading unloading and meshes
-class MMapManager
+struct MMapManager
 {
-public:
   explicit MMapManager(std::filesystem::path const& _mmapDir)
     : mmapDir(_mmapDir), loadedTiles(0)
   {
