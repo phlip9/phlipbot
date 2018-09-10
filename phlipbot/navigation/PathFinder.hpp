@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <bitset>
 #include <thread>
 #include <vector>
 
@@ -67,29 +68,33 @@ struct GridMapLiquidData {
   float depth_level;
 };
 
-enum PathType {
+namespace PathFlag
+{
+size_t const
   // path not built yet
-  PATHFIND_BLANK = 0x0000,
+  PATHFIND_BLANK = 1,
   // normal path
-  PATHFIND_NORMAL = 0x0001,
+  PATHFIND_NORMAL = 2,
   // travel through obstacles, terrain, air, etc (old behavior)
-  PATHFIND_SHORTCUT = 0x0002,
+  PATHFIND_SHORTCUT = 3,
   // we have partial path to follow - getting closer to target
-  PATHFIND_INCOMPLETE = 0x0004,
+  PATHFIND_INCOMPLETE = 4,
   // no valid path at all or error in generating one
-  PATHFIND_NOPATH = 0x0008,
+  PATHFIND_NOPATH = 5,
   // used when we are either flying/swiming or on map w/o mmaps
-  PATHFIND_NOT_USING_PATH = 0x0010,
+  PATHFIND_NOT_USING_PATH = 6,
   // NOSTALRIUS: forced destination
-  PATHFIND_DEST_FORCED = 0x0020,
-  PATHFIND_FLYPATH = 0x0040,
-  PATHFIND_UNDERWATER = 0x0080,
-  PATHFIND_CASTER = 0x0100,
+  PATHFIND_DEST_FORCED = 7,
+  // ? for flying creatures ?
+  PATHFIND_FLYPATH = 8,
+  // ? used when swimming ?
+  PATHFIND_UNDERWATER = 9,
+  // ? used for casters ?
+  PATHFIND_CASTER = 10;
 };
 
-class PathInfo
+struct PathInfo
 {
-public:
   explicit PathInfo(MMapManager& mmgr, uint32_t const m_mapId);
 
   // return value : true if new path was calculated
@@ -111,7 +116,7 @@ public:
 
   inline PointsArray& getFullPath() { return m_pathPoints; }
   inline PointsArray const& getPath() const { return m_pathPoints; }
-  inline PathType getPathType() const { return PathType(m_type); }
+  inline auto getPathType() const { return m_type; }
 
   float Length() const;
 
@@ -125,7 +130,7 @@ private:
   uint32_t m_polyLength; // number of polygons in the path
 
   PointsArray m_pathPoints; // our actual (x,y,z) path to the target
-  uint32_t m_type; // tells what kind of path this is
+  std::bitset<10> m_type; // tells what kind of path this is
 
   bool m_useStraightPath; // type of path will be generated
   bool m_forceDestination; // when set, we will always arrive at given point
@@ -136,8 +141,8 @@ private:
   vec3 m_endPosition; // {x, y, z} of the destination
   vec3 m_actualEndPosition; // {x, y, z} of the closest possible point
                             // to given destination
-  const dtNavMesh* m_navMesh; // the nav mesh
-  const dtNavMeshQuery* m_navMeshQuery; // the nav mesh query used to find the
+  dtNavMesh const* m_navMesh; // the nav mesh
+  dtNavMeshQuery const* m_navMeshQuery; // the nav mesh query used to find the
                                         // path
   uint32_t m_targetAllowedFlags;
 

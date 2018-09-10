@@ -63,7 +63,7 @@ PathInfo::PathInfo(MMapManager& m_mmap, uint32_t const m_mapId)
   : m_mmap(m_mmap),
     m_mapId(m_mapId),
     m_polyLength(0),
-    m_type(PATHFIND_BLANK),
+    m_type(),
     m_useStraightPath(false),
     m_forceDestination(false),
     m_pointPathLimit(MAX_POINT_PATH_LENGTH),
@@ -72,6 +72,7 @@ PathInfo::PathInfo(MMapManager& m_mmap, uint32_t const m_mapId)
     m_targetAllowedFlags(0),
     m_filter(createFilter())
 {
+  m_type.set(PathFlag::PATHFIND_BLANK);
 }
 
 void PathInfo::setPathLengthLimit(float dist)
@@ -97,7 +98,8 @@ bool PathInfo::calculate(vec3& src, vec3& dest, bool forceDest)
   setStartPosition(src);
 
   m_forceDestination = forceDest;
-  m_type = PATHFIND_BLANK;
+  m_type.reset();
+  m_type.set(PathFlag::PATHFIND_BLANK);
 
   // DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::calculate() for %u
   // \n", m_sourceUnit->GetGUIDLow());
@@ -107,7 +109,9 @@ bool PathInfo::calculate(vec3& src, vec3& dest, bool forceDest)
   // loaded tile on the way?)
   if (!m_navMesh || !m_navMeshQuery || !HaveTiles(src) || !HaveTiles(dest)) {
     BuildShortcut();
-    m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
+    m_type.reset();
+    m_type.set(PathFlag::PATHFIND_NORMAL);
+    m_type.set(PathFlag::PATHFIND_NOT_USING_PATH);
     return true;
   }
 
@@ -137,8 +141,7 @@ dtPolyRef PathInfo::FindWalkPoly(dtNavMeshQuery const* query,
   HADESMEM_DETAIL_ASSERT(query);
 
   // WARNING : Nav mesh coords are Y, Z, X (and not X, Y, Z)
-  //float extents[3] = {5.0f, zSearchDist, 5.0f};
-  float extents[3] = {10000.0f, 10000.0f + zSearchDist, 10000.0f};
+  float extents[3] = {5.0f, zSearchDist, 5.0f};
 
   // Default recastnavigation method
   dtPolyRef polyRef;
@@ -189,7 +192,7 @@ void PathInfo::BuildPolyPath(vec3 const& startPos, vec3 const& endPos)
   //      BuildUnderwaterPath();
   //    else {
   //      BuildShortcut();
-  //      m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
+  //      m_type = PathFlag(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
   //      if (m_sourceUnit->CanFly()) m_type |= PATHFIND_FLYPATH;
   //    }
   //    return;
@@ -211,9 +214,10 @@ void PathInfo::BuildPolyPath(vec3 const& startPos, vec3 const& endPos)
     // m_type =
     //  (m_sourceUnit->GetTypeId() == TYPEID_UNIT &&
     //   ((Creature*)m_sourceUnit)->CanFly()) ?
-    //    PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH | PATHFIND_FLYPATH)
+    //    PathFlag(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH | PATHFIND_FLYPATH)
     //    : PATHFIND_NOPATH;
-    m_type = PATHFIND_NOPATH;
+    m_type.reset();
+    m_type.set(PathFlag::PATHFIND_NORMAL);
     return;
   }
 
@@ -237,7 +241,9 @@ void PathInfo::BuildPolyPath(vec3 const& startPos, vec3 const& endPos)
 
     if (buildShortcut) {
       BuildShortcut();
-      m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
+      m_type.reset();
+      m_type.set(PathFlag::PATHFIND_NORMAL);
+      m_type.set(PathFlag::PATHFIND_NOT_USING_PATH);
       return;
     } else {
       float closestPoint[VERTEX_SIZE];
@@ -247,7 +253,8 @@ void PathInfo::BuildPolyPath(vec3 const& startPos, vec3 const& endPos)
         setActualEndPosition(vec3(endPoint[2], endPoint[0], endPoint[1]));
       }
 
-      m_type = PATHFIND_INCOMPLETE;
+      m_type.reset();
+      m_type.set(PathFlag::PATHFIND_INCOMPLETE);
     }
   }
 
@@ -325,7 +332,8 @@ void PathInfo::BuildPolyPath(vec3 const& startPos, vec3 const& endPos)
             suffixStartPoly, endPoint, suffixEndPoint, &PosOverBody))) {
         // suffixStartPoly is still invalid, error state
         BuildShortcut();
-        m_type = PATHFIND_NOPATH;
+        m_type.reset();
+        m_type.set(PathFlag::PATHFIND_NOPATH);
         return;
       }
     }
@@ -389,17 +397,21 @@ void PathInfo::BuildPolyPath(vec3 const& startPos, vec3 const& endPos)
       HADESMEM_DETAIL_TRACE_FORMAT_A(
         "Path Build failed: 0 length path. res=0x%x", dtResult);
       BuildShortcut();
-      m_type = PATHFIND_NOPATH;
+      m_type.reset();
+      m_type.set(PathFlag::PATHFIND_NOPATH);
       return;
     }
   }
 
   // by now we know what type of path we can get
   if (m_pathPolyRefs[m_polyLength - 1] == endPoly &&
-      !(m_type & (PATHFIND_INCOMPLETE | PATHFIND_NOPATH))) {
-    m_type = PATHFIND_NORMAL;
+      !m_type.test(PathFlag::PATHFIND_INCOMPLETE) &&
+      !m_type.test(PathFlag::PATHFIND_NOPATH)) {
+    m_type.reset();
+    m_type.set(PathFlag::PATHFIND_NORMAL);
   } else {
-    m_type = PATHFIND_INCOMPLETE;
+    m_type.reset();
+    m_type.set(PathFlag::PATHFIND_INCOMPLETE);
   }
 
   BuildPointPath(startPoint, endPoint);
@@ -439,7 +451,8 @@ void PathInfo::BuildPointPath(const float* startPoint, const float* endPoint)
     // DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::BuildPointPath
     // FAILED! path sized %d returned\n", pointCount);
     BuildShortcut();
-    m_type = PATHFIND_NOPATH;
+    m_type.reset();
+    m_type.set(PathFlag::PATHFIND_NOPATH);
     return;
   }
 
@@ -456,7 +469,7 @@ void PathInfo::BuildPointPath(const float* startPoint, const float* endPoint)
   // force the given destination, if needed
   bool forceDestination =
     (m_forceDestination &&
-     (!(m_type & PATHFIND_NORMAL) ||
+     (!m_type.test(PathFlag::PATHFIND_NORMAL) ||
       !inRange(getEndPosition(), getActualEndPosition(), 1.0f, 1.0f)));
   if (forceDestination) {
     // we may want to keep partial subpath
@@ -469,8 +482,11 @@ void PathInfo::BuildPointPath(const float* startPoint, const float* endPoint)
       BuildShortcut();
     }
 
-    m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH |
-                      PATHFIND_DEST_FORCED);
+    m_type.reset();
+    m_type.set(PathFlag::PATHFIND_NORMAL);
+    m_type.set(PathFlag::PATHFIND_NOT_USING_PATH);
+    m_type.set(PathFlag::PATHFIND_DEST_FORCED);
+
     // if (m_sourceUnit->CanFly()) m_type |= PATHFIND_FLYPATH;
   }
 
@@ -489,7 +505,9 @@ void PathInfo::BuildShortcut()
   m_pathPoints[0] = getStartPosition();
   m_pathPoints[1] = getActualEndPosition();
 
-  m_type = PATHFIND_SHORTCUT;
+  m_type.reset();
+  m_type.set(PathFlag::PATHFIND_SHORTCUT);
+
   // if (m_sourceUnit->CanFly()) m_type |= PATHFIND_FLYPATH | PATHFIND_NORMAL;
 }
 
@@ -926,18 +944,24 @@ TEST_CASE("PathFinder should be able to compute a path in Elwynn Forest")
            y, x);
 
   fs::path mmap_dir = "C:\\MaNGOS\\data\\__mmaps";
-  // Elwynn Forest tile
   fs::path tile_path = mmap_dir / tile_filename;
 
   REQUIRE(fs::exists(mmap_dir));
   REQUIRE(fs::exists(tile_path));
 
   MMapManager mmap{mmap_dir};
-  CHECK(mmap.loadMap(map_id, x, y));
+  REQUIRE(mmap.loadMap(map_id, x, y));
 
   PathInfo path_info{mmap, map_id};
+  REQUIRE(path_info.calculate(start, end, false));
+  CHECK(path_info.Length() > 0.0f);
 
-  CHECK(path_info.calculate(start, end, false));
+  auto path_type = path_info.getPathType();
+  CHECK(!path_type.test(PathFlag::PATHFIND_BLANK));
+  CHECK(!path_type.test(PathFlag::PATHFIND_SHORTCUT));
+  CHECK(!path_type.test(PathFlag::PATHFIND_DEST_FORCED));
+  CHECK(!path_type.test(PathFlag::PATHFIND_INCOMPLETE));
+  CHECK(path_type.test(PathFlag::PATHFIND_NORMAL));
 }
 }
 }

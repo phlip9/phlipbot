@@ -543,7 +543,6 @@ TEST_CASE("MMapManager can load a map")
   snprintf(tile_filename, filename_len, "%03u%02i%02i.mmtile", map_id, y, x);
 
   fs::path mmap_dir = "C:\\MaNGOS\\data\\__mmaps";
-  // Elwynn Forest tile
   fs::path tile_path = mmap_dir / tile_filename;
 
   REQUIRE(fs::exists(mmap_dir));
