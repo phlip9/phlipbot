@@ -1,5 +1,7 @@
 #pragma once
 
+#include <variant>
+
 #include "ObjectManager.hpp"
 #include "PID.hpp"
 #include "wow_constants.hpp"
@@ -7,6 +9,8 @@
 namespace phlipbot
 {
 struct PlayerController {
+  using FacingSetpointT = std::variant<float, vec3, Guid>;
+
   explicit PlayerController(ObjectManager& om) noexcept;
   ~PlayerController() = default;
 
@@ -16,19 +20,35 @@ struct PlayerController {
   void Update(float const dt);
   void Reset();
 
-  void SetFacingSetpoint(float const facing);
-  void SetFacingTargetSetpoint(vec3 const& target_point);
-  void SetEnabled(bool const enabled);
+  inline void SetFacing(float const target_direction)
+  {
+    facing_setpoint = target_direction;
+  }
+  inline void SetFacing(vec3 const& target_point)
+  {
+    facing_setpoint = target_point;
+  }
+  inline void SetFacing(Guid const target_guid)
+  {
+    facing_setpoint = target_guid;
+  }
+  inline void SetFacing(FacingSetpointT const& setpoint)
+  {
+    facing_setpoint = setpoint;
+  }
+  inline void SetEnabled(bool const _enabled)
+  {
+    enabled = _enabled;
+    Reset();
+  }
 
-  enum class FacingType { Facing, TargetPoint };
+  float ComputeFacing(FacingSetpointT const& setpoint) const;
 
   ObjectManager& objmgr;
 
-  float facing_setpoint{0.0f};
-  vec3 facing_target_setpoint{0.0f};
-  PID facing_controller{};
+  FacingSetpointT facing_setpoint{0.0f};
 
+  PID facing_controller{};
   bool enabled{false};
-  FacingType facing_type{FacingType::Facing};
 };
 }

@@ -24,6 +24,8 @@ public:
     return reinterpret_cast<CMovementData*>(move_data_ptr);
   }
 
+  inline vec3 GetPosition() const override { return GetMovement()->position; }
+
   inline Guid GetSummonedByGuid() const
   {
     return GetDescriptor<Guid>(offsets::Descriptor::SummonedByGuid);

@@ -6,10 +6,32 @@
 
 #include <hadesmem/detail/assert.hpp>
 
-using std::atan2f;
+using std::abs;
+using std::atan2;
+using std::fmod;
+using std::min;
 
 using boost::math::float_constants::pi;
 using boost::math::float_constants::two_pi;
+
+using phlipbot::vec2;
+using phlipbot::vec3;
+
+namespace
+{
+template <class... Ts>
+struct overload : Ts... {
+  using Ts::operator()...;
+};
+template <class... Ts>
+overload(Ts...)->overload<Ts...>;
+
+float wow_angle_2d(vec3 const& a, vec3 const& b)
+{
+  vec2 d = (b - a).xy;
+  return pi - atan2(d.y, -d.x);
+}
+}
 
 namespace phlipbot
 {
@@ -29,19 +51,7 @@ void PlayerController::Update(float const dt)
   auto* player = o_player.get();
 
   float const facing = player->GetMovement()->facing;
-  float _facing_setpoint = 0.0f;
-
-  if (facing_type == FacingType::Facing) {
-    _facing_setpoint = facing_setpoint;
-  } else if (facing_type == FacingType::TargetPoint) {
-    // Get the angle between the player position and target position
-    auto const& pos = player->GetMovement()->position;
-    float const dy = facing_target_setpoint.y - pos.y;
-    float const dx = facing_target_setpoint.x - pos.x;
-    _facing_setpoint = pi - atan2f(dy, -dx);
-  } else {
-    HADESMEM_DETAIL_ASSERT(false && "invalid FacingType");
-  }
+  float _facing_setpoint = ComputeFacing(facing_setpoint);
 
   // Compute the shortest facing error, i.e., error turning cw vs error turning
   // ccw, whichever is closer to the setpoint.
@@ -49,41 +59,43 @@ void PlayerController::Update(float const dt)
   float const error1_dir = (_facing_setpoint < facing) ? -1.0f : 1.0f;
   float const error2 = two_pi - error1;
   float const error2_dir = -error1_dir;
-  float const facing_error = fminf(error1, error2);
+  float const facing_error = min(error1, error2);
   float const facing_dir = (error1 < error2) ? error1_dir : error2_dir;
 
-  float const output = facing_controller.Update(facing_error, dt);
+  if (fabs(facing_error) >= 1e-2) {
+    float const output = facing_controller.Update(facing_error, dt);
+    float const new_facing = fmod(facing + facing_dir * output, two_pi);
+    player->SetFacing(new_facing);
+  }
+}
 
-  // angular_acceleration = dir * output;
-  // angular_velocity = prev_angular_velocity + angular_acceleration * dt;
-  // prev_angular_velocity = angular_velocity;
-  // float const new_facing =
-  //   fmod(process_variable + angular_velocity * dt, two_pi);
-
-  float const new_facing = fmod(facing + facing_dir * output, two_pi);
-  player->SetFacing(new_facing);
+float PlayerController::ComputeFacing(FacingSetpointT const& setpoint) const
+{
+  // clang-format off
+  return std::visit(
+    overload {
+      [](float const target_facing)
+      {
+        return target_facing;
+      },
+      [&](vec3 const& target_pos)
+      {
+        auto oplayer = objmgr.GetPlayer();
+        vec3 const& player_pos = oplayer.get()->GetPosition();
+        return wow_angle_2d(player_pos, target_pos);
+      },
+      [&](Guid const target_guid)
+      {
+        auto oplayer = objmgr.GetPlayer();
+        auto otarget = objmgr.GetObjByGuid(target_guid);
+        vec3 const& target_pos = otarget.get()->GetPosition();
+        vec3 const& player_pos = oplayer.get()->GetPosition();
+        return wow_angle_2d(player_pos, target_pos);
+      }
+    },
+    setpoint);
+  // clang-format on
 }
 
 void PlayerController::Reset() { facing_controller.Reset(); }
-
-void PlayerController::SetFacingSetpoint(float const facing)
-{
-  HADESMEM_DETAIL_ASSERT(facing >= 0 && facing <= two_pi &&
-                         "facing out of range");
-
-  facing_setpoint = facing;
-  facing_type = FacingType::Facing;
-}
-
-void PlayerController::SetFacingTargetSetpoint(vec3 const& target_point)
-{
-  facing_target_setpoint = target_point;
-  facing_type = FacingType::TargetPoint;
-}
-
-void PlayerController::SetEnabled(bool const _enabled)
-{
-  enabled = _enabled;
-  Reset();
-}
 }

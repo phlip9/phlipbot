@@ -13,8 +13,6 @@
 
 using boost::math::float_constants::two_pi;
 
-using FacingType = phlipbot::PlayerController::FacingType;
-
 namespace phlipbot
 {
 bool& GetGuiIsVisible()
@@ -84,7 +82,7 @@ void Gui::Render()
       if (ImGui::Button("Test CTM")) {
         if (o_player) {
           auto* player = o_player.value();
-          auto player_pos = player->GetMovement()->position;
+          auto player_pos = player->GetPosition();
           player_pos.x += ctm_dx;
           player_pos.y += ctm_dy;
           player->ClickToMove(CtmType::Move, 0, player_pos, ctm_precision);
@@ -95,22 +93,23 @@ void Gui::Render()
 
       {
         auto const player_pos =
-          o_player
-            .map([](auto* player) { return player->GetMovement()->position; })
+          o_player.map([](auto* player) { return player->GetPosition(); })
             .value_or(vec3{0, 0, 0});
 
         ImGui::Text("Player Position: {%.3f, %.3f, %.3f}", player_pos.x,
                     player_pos.y, player_pos.z);
       }
 
-      ImGui::InputFloat3("Target Position",
-                         reinterpret_cast<float*>(&target_pos), 2);
+      ImGui::SliderFloat("Facing Direction", &facing_direction, 0.0f, two_pi);
+      ImGui::InputFloat3("Facing Position",
+                         reinterpret_cast<float*>(&facing_position), 2);
+      ImGui::InputScalar("Facing Object", ImGuiDataType_U64, &facing_guid,
+                         nullptr, nullptr, "%016" PRIx64,
+                         ImGuiInputTextFlags_CharsHexadecimal);
 
-      ImGui::SliderFloat("Facing", &set_facing, 0.0f, two_pi);
-      ImGui::SameLine();
       if (ImGui::Button("SetFacing")) {
         if (o_player) {
-          o_player.value()->SetFacing(set_facing);
+          o_player.value()->SetFacing(facing_direction);
         }
       }
 
@@ -121,22 +120,25 @@ void Gui::Render()
       ImGui::SliderFloat("I Gain", &facing_ctrl.gain_i, 0.0f, 1.0f);
       ImGui::SliderFloat("D Gain", &facing_ctrl.gain_d, 0.0f, 1.0f);
 
+
+      ImGui::RadioButton("Direction ", &facing_type,
+                         int(FacingType::Direction));
+      ImGui::SameLine();
+      ImGui::RadioButton("Position ", &facing_type, int(FacingType::Position));
+      ImGui::SameLine();
+      ImGui::RadioButton("Object", &facing_type, int(FacingType::Object));
+
+      if (facing_type == int(FacingType::Direction)) {
+        player_controller.SetFacing(facing_direction);
+      } else if (facing_type == int(FacingType::Position)) {
+        player_controller.SetFacing(facing_position);
+      } else if (facing_type == int(FacingType::Object)) {
+        player_controller.SetFacing(facing_guid);
+      }
+
       if (ImGui::Checkbox("Player Controller Enabled",
                           &player_controller_enabled)) {
         player_controller.SetEnabled(player_controller_enabled);
-      }
-
-      ImGui::SameLine();
-      ImGui::RadioButton("Facing ", &facing_type,
-                         static_cast<int>(FacingType::Facing));
-      ImGui::SameLine();
-      ImGui::RadioButton("Target", &facing_type,
-                         static_cast<int>(FacingType::TargetPoint));
-
-      if (facing_type == static_cast<int>(FacingType::Facing)) {
-        player_controller.SetFacingSetpoint(set_facing);
-      } else if (facing_type == static_cast<int>(FacingType::TargetPoint)) {
-        player_controller.SetFacingTargetSetpoint(target_pos);
       }
 
       ImGui::Separator();

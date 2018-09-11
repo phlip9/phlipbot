@@ -13,7 +13,7 @@ public:
   WowGameObject(const WowGameObject& obj) = default;
   virtual ~WowGameObject() = default;
 
-  inline vec3 GetPosition() const
+  inline vec3 GetPosition() const override
   {
     return GetDescriptor<vec3>(offsets::Descriptor::GameObjPos);
   }

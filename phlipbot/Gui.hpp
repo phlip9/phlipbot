@@ -27,20 +27,29 @@ public:
   void Reset();
   void Shutdown();
 
-  bool is_initialized{false};
-  ObjectManager& objmgr;
+  enum class FacingType : int
+  {
+    Direction,
+    Position,
+    Object
+  };
 
-  bool player_controller_enabled{false};
-  int facing_type{static_cast<int>(PlayerController::FacingType::Facing)};
-  PlayerController& player_controller;
+  bool is_initialized{false};
+
+  ObjectManager& objmgr;
 
   float ctm_precision{2.0f};
   bool ctm_toggle{false};
   float ctm_dx{0.0f};
   float ctm_dy{0.0f};
 
-  float set_facing{0.0f};
-  vec3 target_pos{};
+  int facing_type = int(FacingType::Direction);
+  float facing_direction{0.0f};
+  vec3 facing_position{};
+  Guid facing_guid{};
+
+  bool player_controller_enabled{false};
+  PlayerController& player_controller;
 
   uint32_t input_flags{0};
   bool control_toggle{false};

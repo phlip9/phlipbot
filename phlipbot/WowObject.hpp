@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <hadesmem/error.hpp>
+
 #include "memory.hpp"
 #include "wow_constants.hpp"
 
@@ -51,6 +53,12 @@ struct WowObject {
 
   virtual std::string GetName() const;
   virtual ObjectType GetObjectType() const;
+  virtual vec3 GetPosition() const
+  {
+    throw hadesmem::Error{}
+      << hadesmem::ErrorString{"GetPosition() not implemented for this type"}
+      << hadesmem::ErrorStringOther{ToString()};
+  };
 
   virtual void PrintToStream(std::ostream& os) const;
   std::string ToString() const;
