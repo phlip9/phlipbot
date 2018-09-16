@@ -23,8 +23,8 @@ bool& GetGuiIsVisible()
 void SetGuiIsVisible(bool val) { GetGuiIsVisible() = val; }
 void ToggleGuiIsVisible() { SetGuiIsVisible(!GetGuiIsVisible()); }
 
-Gui::Gui(ObjectManager& om, PlayerController& pc) noexcept
-  : objmgr(om), player_controller(pc)
+Gui::Gui(ObjectManager& om, PlayerController& pc, PlayerNavigator& pn) noexcept
+  : objmgr(om), player_controller(pc), player_nav(pn)
 {
 }
 
@@ -120,20 +120,29 @@ void Gui::Render()
       ImGui::SliderFloat("I Gain", &facing_ctrl.gain_i, 0.0f, 1.0f);
       ImGui::SliderFloat("D Gain", &facing_ctrl.gain_d, 0.0f, 1.0f);
 
-
-      ImGui::RadioButton("Direction ", &facing_type,
-                         int(FacingType::Direction));
+      bool on_change = false;
+      on_change |= ImGui::RadioButton("Direction ", &facing_type,
+                                      int(FacingType::Direction));
       ImGui::SameLine();
-      ImGui::RadioButton("Position ", &facing_type, int(FacingType::Position));
+      on_change |= ImGui::RadioButton("Position ", &facing_type,
+                                      int(FacingType::Position));
       ImGui::SameLine();
-      ImGui::RadioButton("Object", &facing_type, int(FacingType::Object));
+      on_change |=
+        ImGui::RadioButton("Object", &facing_type, int(FacingType::Object));
 
-      if (facing_type == int(FacingType::Direction)) {
-        player_controller.SetFacing(facing_direction);
-      } else if (facing_type == int(FacingType::Position)) {
+      if (on_change) {
+        if (facing_type == int(FacingType::Direction)) {
+          player_controller.SetFacing(facing_direction);
+        } else if (facing_type == int(FacingType::Position)) {
+          player_controller.SetFacing(facing_position);
+        } else if (facing_type == int(FacingType::Object)) {
+          player_controller.SetFacing(facing_guid);
+        }
+      }
+
+      if (ImGui::Button("Set Player Controller Position")) {
         player_controller.SetFacing(facing_position);
-      } else if (facing_type == int(FacingType::Object)) {
-        player_controller.SetFacing(facing_guid);
+        player_controller.SetPosition(facing_position);
       }
 
       if (ImGui::Checkbox("Player Controller Enabled",
@@ -177,6 +186,17 @@ void Gui::Render()
         if (o_player) {
           o_player.value()->UnsetControlBits(input_flags, ::GetTickCount());
         }
+      }
+    }
+
+    if (ImGui::CollapsingHeader("Navigation")) {
+      if (ImGui::InputFloat3("Destination",
+                             reinterpret_cast<float*>(&nav_destination), 2)) {
+        player_nav.SetDestination(nav_destination);
+      }
+
+      if (ImGui::Checkbox("Navigation Enabled", &player_nav_enabled)) {
+        player_nav.SetEnabled(player_nav_enabled);
       }
     }
   }

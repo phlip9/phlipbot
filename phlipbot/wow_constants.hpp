@@ -3,11 +3,13 @@
 #include <stdint.h>
 
 #pragma warning(push)
-#pragma warning(disable:4201) // allow anonymous unions
+#pragma warning(disable : 4201) // allow anonymous unions
 #define GLM_FORCE_SWIZZLE
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
+#include <glm/ext/vector_int2.hpp>
+#include <glm/ext/vector_int3.hpp>
 #pragma warning(pop)
 
 // clang-format off
@@ -19,6 +21,8 @@ using Guid = uint64_t;
 using vec2 = glm::vec2;
 using vec3 = glm::vec3;
 using vec4 = glm::vec4;
+using vec2i = glm::ivec2;
+using vec3i = glm::ivec3;
 
 struct BoundingBox {
   vec3 p1;
@@ -147,13 +151,17 @@ uint32_t const
 namespace MovementFlags
 {
 uint32_t const
-  None      = 0x00000000,
-  Forward   = 0x00000001,
-  Back      = 0x00000002,
-  TurnLeft  = 0x00000010,
-  TurnRight = 0x00000020,
-  Stunned   = 0x00001000,
-  Swimming  = 0x00200000;
+  Idle        = 0,
+  Forward     = 1 << 0,
+  Backward    = 1 << 1,
+  StrafeLeft  = 1 << 2,
+  StrafeRight = 1 << 3,
+  TurnLeft    = 1 << 4,
+  TurnRight   = 1 << 5,
+  Walking     = 1 << 8,
+  Stunned     = 1 << 12,
+  Jumping     = 1 << 13,
+  Swimming    = 1 << 21;
 }
 
 enum class MovementOpCode : uint32_t {

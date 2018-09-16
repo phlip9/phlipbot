@@ -67,6 +67,7 @@ public:
 
   void EnumVisibleObjects();
   Guid GetPlayerGuid() const;
+  uint32_t GetMapId() const;
 
   boost::optional<WowPlayer*> GetPlayer();
   boost::optional<WowObject*> GetObjByGuid(Guid const guid);

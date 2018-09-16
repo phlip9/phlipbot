@@ -25,6 +25,7 @@
 #define MMAP_MAGIC 0x4d4d4150 // 'MMAP'
 #define MMAP_VERSION 3
 #define MMAP_VERSION_STR "3"
+#define MMAP_GRID_SIZE 533.33333f
 
 struct MmapTileHeader {
   uint32_t mmapMagic;

@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <thread>
 #include <filesystem>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
-#include <tuple>
+#include <thread>
 #include <unordered_map>
 
 #include <boost/exception/error_info.hpp>
@@ -32,13 +31,15 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshQuery.h>
 
+#include "../wow_constants.hpp"
+#include "MoveMapSharedDefines.hpp"
+
 // TODO(phlip9): make MMapManager::mmapDir configurable
 
 //  move map related classes
 namespace phlipbot
 {
-using ErrorMapTile =
-  boost::error_info<struct TagErrorMap, std::tuple<int32_t, int32_t>>;
+using ErrorMapTile = boost::error_info<struct TagErrorMap, vec2i>;
 using ErrorMapId = boost::error_info<struct TagErrorMapId, uint32_t>;
 using ErrorHeaderVersion =
   boost::error_info<struct TagErrorHeaderVersion, uint32_t>;
@@ -72,16 +73,31 @@ using MMapDataSet = std::unordered_map<uint32_t, std::unique_ptr<MMapData>>;
 
 // singelton class
 // holds all all access to mmap loading unloading and meshes
-struct MMapManager
-{
+struct MMapManager {
   explicit MMapManager(std::filesystem::path const& _mmapDir)
     : mmapDir(_mmapDir), loadedTiles(0)
   {
   }
 
-  bool loadMap(uint32_t mapId, int32_t x, int32_t y);
+  inline uint32_t packTileID(vec2i const& tile) const
+  {
+    return uint32_t(tile.x << 16 | tile.y);
+  }
+  inline vec2i tileFromPos(vec2 const& pos) const
+  {
+    return vec2i{int(32 - (pos.x / MMAP_GRID_SIZE)),
+                 int(32 - (pos.y / MMAP_GRID_SIZE))};
+  }
+  inline vec2 posFromTile(vec2i const& tile) const
+  {
+    return vec2{(float(tile.x) - 32) * MMAP_GRID_SIZE,
+                (float(tile.y) - 32) * MMAP_GRID_SIZE};
+  }
+
+  bool loadMapData(uint32_t mapId);
+  bool loadMap(uint32_t mapId, vec2i const& tile);
   bool loadGameObject(uint32_t displayId);
-  bool unloadMap(uint32_t mapId, int32_t x, int32_t y);
+  bool unloadMap(uint32_t mapId, vec2i const& tile);
   bool unloadMap(uint32_t mapId);
   bool unloadMapInstance(uint32_t mapId, std::thread::id tid);
 
@@ -95,9 +111,6 @@ struct MMapManager
   uint32_t getLoadedMapsCount() const { return loadedMMaps.size(); }
 
 private:
-  bool loadMapData(uint32_t mapId);
-  uint32_t packTileID(int32_t x, int32_t y);
-
   std::filesystem::path mmapDir;
 
   MMapDataSet loadedMMaps;

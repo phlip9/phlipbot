@@ -8,6 +8,9 @@
 #include "Input.hpp"
 #include "ObjectManager.hpp"
 #include "PlayerController.hpp"
+#include "navigation/MoveMap.hpp"
+#include "navigation/PlayerNavigator.hpp"
+
 
 namespace phlipbot
 {
@@ -36,6 +39,8 @@ public:
   ObjectManager objmgr;
   Input input;
   PlayerController player_controller;
+  MMapManager mmap_mgr;
+  PlayerNavigator player_nav;
   Gui gui;
 };
 }

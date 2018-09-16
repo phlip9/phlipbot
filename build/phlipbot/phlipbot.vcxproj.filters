@@ -78,6 +78,9 @@
     <ClCompile Include="..\..\phlipbot\navigation\PathFinder.cpp">
       <Filter>Source Files\navigation</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\phlipbot\navigation\PlayerNavigator.cpp">
+      <Filter>Source Files\navigation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../phlipbot/wow_constants.hpp">
@@ -144,6 +147,9 @@
       <Filter>Header Files\navigation</Filter>
     </ClInclude>
     <ClInclude Include="..\..\phlipbot\navigation\PathFinder.hpp">
+      <Filter>Header Files\navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\phlipbot\navigation\PlayerNavigator.hpp">
       <Filter>Header Files\navigation</Filter>
     </ClInclude>
   </ItemGroup>

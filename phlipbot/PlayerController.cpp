@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include <glm/geometric.hpp>
+
 #include <boost/math/constants/constants.hpp>
 
 #include <hadesmem/detail/assert.hpp>
@@ -10,6 +12,8 @@ using std::abs;
 using std::atan2;
 using std::fmod;
 using std::min;
+
+using glm::length;
 
 using boost::math::float_constants::pi;
 using boost::math::float_constants::two_pi;
@@ -49,8 +53,9 @@ void PlayerController::Update(float const dt)
     return;
   }
   auto* player = o_player.get();
+  auto* cmovement = player->GetMovement();
 
-  float const facing = player->GetMovement()->facing;
+  float const facing = cmovement->facing;
   float _facing_setpoint = ComputeFacing(facing_setpoint);
 
   // Compute the shortest facing error, i.e., error turning cw vs error turning
@@ -67,9 +72,20 @@ void PlayerController::Update(float const dt)
     float const new_facing = fmod(facing + facing_dir * output, two_pi);
     player->SetFacing(new_facing);
   }
+
+  vec3 const player_pos = cmovement->position;
+  if (!InRange(player_pos, position_setpoint)) {
+    if ((cmovement->move_flags & MovementFlags::Forward) == 0) {
+      player->SetControlBits(InputControlFlags::Forward, ::GetTickCount());
+    }
+  } else {
+    if ((cmovement->move_flags & MovementFlags::Forward) != 0) {
+      player->UnsetControlBits(InputControlFlags::Forward, ::GetTickCount());
+    }
+  }
 }
 
-float PlayerController::ComputeFacing(FacingSetpointT const& setpoint) const
+float PlayerController::ComputeFacing(FacingSetpoint const& setpoint) const
 {
   // clang-format off
   return std::visit(
@@ -97,5 +113,17 @@ float PlayerController::ComputeFacing(FacingSetpointT const& setpoint) const
   // clang-format on
 }
 
-void PlayerController::Reset() { facing_controller.Reset(); }
+void PlayerController::Reset()
+{
+  facing_controller.Reset();
+
+  auto const o_player = objmgr.GetPlayer();
+  if (!o_player.has_value()) {
+    return;
+  }
+  auto* player = o_player.get();
+  if ((player->GetMovement()->move_flags & MovementFlags::Forward) != 0) {
+    player->UnsetControlBits(InputControlFlags::Forward, ::GetTickCount());
+  }
+}
 }

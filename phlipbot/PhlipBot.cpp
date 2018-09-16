@@ -7,7 +7,7 @@
 //               state transitions?
 // TODO(phlip9): use more robust way of detecting whether we're ingame or not
 // TODO(phlip9): anti-afk
-// TODO(phlip9): flexible configuration?
+// TODO(phlip9): flexible configuration? e.g., mmaps directory, PID values, etc
 
 using std::chrono::duration;
 using std::chrono::duration_cast;
@@ -76,7 +76,6 @@ void SetDefaultRenderState(HWND const hwnd, IDirect3DDevice9* device)
 }
 }
 
-
 namespace phlipbot
 {
 PhlipBot::PhlipBot() noexcept
@@ -85,7 +84,9 @@ PhlipBot::PhlipBot() noexcept
     objmgr(),
     input(),
     player_controller(objmgr),
-    gui(objmgr, player_controller)
+    mmap_mgr("C:\\MaNGOS\\data\\__mmaps"),
+    player_nav(objmgr, player_controller, mmap_mgr),
+    gui(objmgr, player_controller, player_nav)
 {
 }
 
@@ -98,6 +99,7 @@ void PhlipBot::Update()
   if (objmgr.IsInGame()) {
     objmgr.EnumVisibleObjects();
 
+    player_nav.Update();
     player_controller.Update(dt);
   }
 }

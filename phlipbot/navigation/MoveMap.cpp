@@ -29,7 +29,6 @@
 #include <doctest.h>
 
 #include "../wow_constants.hpp"
-#include "MoveMapSharedDefines.hpp"
 
 using std::mutex;
 using std::shared_lock;
@@ -52,6 +51,7 @@ namespace this_thread = std::this_thread;
 
 using hadesmem::ErrorString;
 
+// TODO(phlip9): add query tile coords and test if tile coords are in-bounds
 // TODO(phlip9): unloadMap() needs synchronization
 // TODO(phlip9): I don't really trust the synchronization here...
 
@@ -93,6 +93,12 @@ bool MMapManager::loadMapData(uint32_t mapId)
   snprintf(filename, filename_len, "%03u.mmap", mapId);
 
   fs::path mmap_path = mmapDir / filename;
+
+  if (!fs::exists(mmap_path)) {
+    HADESMEM_DETAIL_THROW_EXCEPTION(
+      hadesmem::Error{} << ErrorString{"mmap header file does not exist"}
+                        << ErrorFile{mmap_path});
+  }
 
   dtNavMeshParams params;
   {
@@ -137,12 +143,7 @@ bool MMapManager::loadMapData(uint32_t mapId)
   return true;
 }
 
-uint32_t MMapManager::packTileID(int32_t x, int32_t y)
-{
-  return static_cast<uint32_t>(x << 16 | y);
-}
-
-bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
+bool MMapManager::loadMap(uint32_t mapId, vec2i const& tile)
 {
   // make sure the mmap is loaded and ready to load tiles
   if (!loadMapData(mapId)) {
@@ -160,7 +161,7 @@ bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
   HADESMEM_DETAIL_ASSERT(mmap->navMesh && "MMapData not initialized");
 
   // check if we already have this tile loaded
-  uint32_t packedGridPos = packTileID(x, y);
+  uint32_t packedGridPos = packTileID(tile);
 
   // exclusively acquire the loading lock
   unique_lock<mutex> lock{mmap->tilesLoading_lock};
@@ -168,22 +169,31 @@ bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
   // mmap already loaded
   if (mmap->mmapLoadedTiles.find(packedGridPos) !=
       mmap->mmapLoadedTiles.end()) {
-    return false;
+    return true;
   }
 
   // load this tile :: mmaps/MMMXXYY.mmtile
   constexpr size_t filename_len = length("%03u%02d%02d.mmtile") + 1;
   char filename[filename_len];
-  snprintf(filename, filename_len, "%03u%02d%02d.mmtile", mapId, y, x);
+  snprintf(filename, filename_len, "%03u%02d%02d.mmtile", mapId, tile.x,
+           tile.y);
 
   fs::path mmtile_path = mmapDir / filename;
+
+  // Just warn here, since we might just be querying an out-of-bounds tile
+  if (!fs::exists(mmtile_path)) {
+    HADESMEM_DETAIL_TRACE_FORMAT_A("Warning: mmtile file does not exist: %s",
+                                   mmtile_path.c_str());
+    return false;
+  }
+
   ifstream mmtile_fstream{mmtile_path, std::ios::binary};
 
   if (!mmtile_fstream) {
-    HADESMEM_DETAIL_THROW_EXCEPTION(
-      hadesmem::Error{} << ErrorString{"Could not open mmtile file"}
-                        << ErrorMapId{mapId} << ErrorMapTile{make_tuple(x, y)}
-                        << ErrorFile{mmtile_path});
+    HADESMEM_DETAIL_THROW_EXCEPTION(hadesmem::Error{}
+                                    << ErrorString{"Could not open mmtile file"}
+                                    << ErrorMapId{mapId} << ErrorMapTile{tile}
+                                    << ErrorFile{mmtile_path});
   }
 
   // read header
@@ -199,7 +209,7 @@ bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
   if (file_header.mmapMagic != MMAP_MAGIC) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{} << ErrorString{"Invalid magic in mmap header"}
-                        << ErrorMapId{mapId} << ErrorMapTile{make_tuple(x, y)}
+                        << ErrorMapId{mapId} << ErrorMapTile{tile}
                         << ErrorFile{mmtile_path}
                         << ErrorHeaderMagic{file_header.mmapMagic});
   }
@@ -207,7 +217,7 @@ bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
   if (file_header.mmapVersion != MMAP_VERSION) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{} << ErrorString{"Bad version in mmap header"}
-                        << ErrorMapId{mapId} << ErrorMapTile{make_tuple(x, y)}
+                        << ErrorMapId{mapId} << ErrorMapTile{tile}
                         << ErrorFile{mmtile_path}
                         << ErrorHeaderVersion{file_header.mmapVersion});
   }
@@ -219,7 +229,7 @@ bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
                            file_header.size)) {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{} << ErrorString{"Failed to read tile map data"}
-                        << ErrorMapId{mapId} << ErrorMapTile{make_tuple(x, y)}
+                        << ErrorMapId{mapId} << ErrorMapTile{tile}
                         << ErrorFile{mmtile_path});
   }
 
@@ -235,39 +245,39 @@ bool MMapManager::loadMap(uint32_t mapId, int32_t x, int32_t y)
     ++loadedTiles;
 
     HADESMEM_DETAIL_TRACE_FORMAT_A("Loaded mmap tile %03u%02d%02d.mmtile",
-                                   mapId, y, x);
+                                   mapId, tile.x, tile.y);
     return true;
   } else {
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{} << ErrorString{"Failed to load mmap tile into nav mesh"}
-                        << ErrorMapId{mapId} << ErrorMapTile{make_tuple(x, y)}
+                        << ErrorMapId{mapId} << ErrorMapTile{tile}
                         << ErrorFile{mmtile_path} << ErrorDTResult{res});
   }
 
   return false;
 }
 
-bool MMapManager::unloadMap(uint32_t mapId, int32_t x, int32_t y)
+bool MMapManager::unloadMap(uint32_t mapId, vec2i const& tile)
 {
   // check if we have this map loaded
   if (loadedMMaps.find(mapId) == loadedMMaps.end()) {
     // file may not exist, therefore not loaded
     HADESMEM_DETAIL_TRACE_FORMAT_A(
       "Trying to unload mmap that hasn't been loaded. %03u%02d%02d.mmtile",
-      mapId, y, x);
+      mapId, tile.y, tile.x);
     return false;
   }
 
   MMapData* mmap = loadedMMaps[mapId].get();
 
   // check if we have this tile loaded
-  uint32_t packedGridPos = packTileID(x, y);
+  uint32_t packedGridPos = packTileID(tile);
   if (mmap->mmapLoadedTiles.find(packedGridPos) ==
       mmap->mmapLoadedTiles.end()) {
     // file may not exist, therefore not loaded
     HADESMEM_DETAIL_TRACE_FORMAT_A(
       "Trying to unload mmap tile that hasn't been loaded. %03u%02d%02d.mmtile",
-      mapId, y, x);
+      mapId, tile.x, tile.y);
     return false;
   }
 
@@ -282,14 +292,14 @@ bool MMapManager::unloadMap(uint32_t mapId, int32_t x, int32_t y)
     HADESMEM_DETAIL_THROW_EXCEPTION(
       hadesmem::Error{}
       << ErrorString{"Failed to unload mmap tile from navmesh"}
-      << ErrorMapId{mapId} << ErrorMapTile{make_tuple(x, y)});
+      << ErrorMapId{mapId} << ErrorMapTile{tile});
   }
 
   mmap->mmapLoadedTiles.erase(packedGridPos);
   --loadedTiles;
 
   HADESMEM_DETAIL_TRACE_FORMAT_A("Unloaded mmap tile %03u%02d%02d.mmtile",
-                                 mapId, y, x);
+                                 mapId, tile.x, tile.y);
 
   return true;
 }
@@ -308,17 +318,17 @@ bool MMapManager::unloadMap(uint32_t mapId)
   // unload all tiles from given map
   MMapData* mmap = loadedMMaps[mapId].get();
   for (auto& pair : mmap->mmapLoadedTiles) {
-    int32_t x = (pair.first >> 16);
-    int32_t y = (pair.first & 0x0000FFFF);
+    vec2i const tile{pair.first >> 16, pair.first & 0x0000FFFF};
 
     dtStatus res = mmap->navMesh->removeTile(pair.second, nullptr, nullptr);
     if (dtStatusFailed(res)) {
       HADESMEM_DETAIL_TRACE_FORMAT_A(
-        "Could not unload %03u%02i%02i.mmtile from navmesh", mapId, y, x);
+        "Could not unload %03u%02i%02i.mmtile from navmesh", mapId, tile.x,
+        tile.x);
       success_flag = false;
     } else {
       HADESMEM_DETAIL_TRACE_FORMAT_A(
-        "Unloaded %03u%02i%02i.mmtile from navmesh", mapId, y, x);
+        "Unloaded %03u%02i%02i.mmtile from navmesh", mapId, tile.x, tile.y);
       --loadedTiles;
     }
   }
@@ -530,20 +540,19 @@ TEST_CASE("MMapManager can load a map")
   //               reliant on my global filesystem setup
 
   // Eastern Kingdoms
-  uint32_t map_id = 0;
+  uint32_t const map_id = 0;
   // Elwynn Forest
-  int32_t x = 32;
-  int32_t y = 48;
-
-  vec3 start{-8949.95f, -132.493f, 83.5312f};
-  vec3 end{-9046.507f, -45.71962f, 88.33186f};
+  vec2i const tile{48, 32};
+  vec3 const start{-8949.95f, -132.493f, 83.5312f};
+  vec3 const end{-9046.507f, -45.71962f, 88.33186f};
 
   constexpr size_t filename_len = length("%03u%02i%02i.mmtile") + 1;
   char tile_filename[filename_len];
-  snprintf(tile_filename, filename_len, "%03u%02i%02i.mmtile", map_id, y, x);
+  snprintf(tile_filename, filename_len, "%03u%02i%02i.mmtile", map_id, tile.x,
+           tile.y);
 
-  fs::path mmap_dir = "C:\\MaNGOS\\data\\__mmaps";
-  fs::path tile_path = mmap_dir / tile_filename;
+  fs::path const mmap_dir = "C:\\MaNGOS\\data\\__mmaps";
+  fs::path const tile_path = mmap_dir / tile_filename;
 
   REQUIRE(fs::exists(mmap_dir));
   REQUIRE(fs::exists(tile_path));
@@ -555,7 +564,7 @@ TEST_CASE("MMapManager can load a map")
   CHECK(mmap.GetNavMeshQuery(map_id) == nullptr);
 
   // try loading the map
-  CHECK(mmap.loadMap(map_id, x, y));
+  CHECK(mmap.loadMap(map_id, tile));
   CHECK(mmap.getLoadedMapsCount() > 0);
   CHECK(mmap.getLoadedTilesCount() > 0);
 
@@ -566,13 +575,13 @@ TEST_CASE("MMapManager can load a map")
   dtNavMeshQuery const* query = mmap.GetNavMeshQuery(map_id);
   REQUIRE(query != nullptr);
 
-  dtMeshTile const* tile = navmesh->getTile(0);
-  REQUIRE(tile != nullptr);
+  dtMeshTile const* mesh_tile = navmesh->getTile(0);
+  REQUIRE(mesh_tile != nullptr);
 
-  dtPoly const* p = &tile->polys[0];
+  dtPoly const* p = &mesh_tile->polys[0];
   CHECK(p != nullptr);
 
-  dtPolyDetail const* pd = &tile->detailMeshes[0];
+  dtPolyDetail const* pd = &mesh_tile->detailMeshes[0];
   CHECK(pd != nullptr);
   CHECK(pd->triCount > 0);
   CHECK(pd->vertCount > 0);

@@ -32,6 +32,8 @@ namespace ObjectManagerOffsets = phlipbot::offsets::ObjectManagerOffsets;
 
 using ClntObjMgr__GetActivePlayer_Fn = Guid(__stdcall*)();
 
+using ClntObjMgr__GetMapId_Fn = uint32_t(__stdcall*)();
+
 using ClntObjMgr__ObjectPtr_Fn = uintptr_t(__fastcall*)(uint32_t filter,
                                                         const char* fileName,
                                                         Guid guid,
@@ -51,8 +53,8 @@ namespace
 // NOTE: Obviously not threadsafe
 ObjectManager*& GetEnumVisibleCtxt() noexcept
 {
-  static ObjectManager* obj_mgr = nullptr;
-  return obj_mgr;
+  static ObjectManager* objmgr = nullptr;
+  return objmgr;
 }
 
 void SetEnumVisibleCtxt(ObjectManager* objmgr) noexcept
@@ -67,6 +69,14 @@ inline Guid ClntObjMgr__GetActivePlayer()
       FunctionOffsets::ClntObjMgr__GetActivePlayer);
 
   return (getActivePlayerFn)();
+}
+
+inline uint32_t ClntObjMgr__GetMapId()
+{
+  auto const getMapIdFn = reinterpret_cast<ClntObjMgr__GetMapId_Fn>(
+    FunctionOffsets::ClntObjMgr__GetMapId);
+
+  return (getMapIdFn)();
 }
 
 inline uintptr_t ClntObjMgr__ObjectPtr(uint32_t filter, Guid guid)
@@ -163,6 +173,8 @@ Guid ObjectManager::GetPlayerGuid() const
 {
   return ClntObjMgr__GetActivePlayer();
 }
+
+uint32_t ObjectManager::GetMapId() const { return ClntObjMgr__GetMapId(); }
 
 optional<WowPlayer*> ObjectManager::GetPlayer()
 {

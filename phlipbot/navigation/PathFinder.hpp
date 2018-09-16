@@ -44,9 +44,6 @@ using PointsArray = std::vector<vec3>;
 #define MAX_PATH_LENGTH 256
 #define MAX_POINT_PATH_LENGTH 256
 
-#define VERTEX_SIZE 3
-#define INVALID_POLYREF 0
-
 // lh-server/core : game/Maps/GridMap.h
 #define MAP_LIQUID_TYPE_NO_WATER 0x00
 #define MAP_LIQUID_TYPE_MAGMA 0x01
@@ -93,18 +90,20 @@ size_t const
   PATHFIND_CASTER = 10;
 };
 
-struct PathInfo
-{
-  explicit PathInfo(MMapManager& mmgr, uint32_t const m_mapId);
+struct PathFinder {
+  explicit PathFinder(MMapManager& mmgr, uint32_t const m_mapId) noexcept;
 
   // return value : true if new path was calculated
-  bool calculate(vec3& src, vec3& dest, bool forceDest = false);
+  bool
+  calculate(vec3 const& src, vec3 const& dest, bool const forceDest = false);
 
   void setUseStrightPath(bool useStraightPath)
   {
     m_useStraightPath = useStraightPath;
   };
   void setPathLengthLimit(float distance);
+
+  inline uint32_t getMapId() { return m_mapId; }
 
   inline void getStartPosition(vec3& pos) { pos = m_startPosition; }
   inline void getEndPosition(vec3& pos) { pos = m_endPosition; }
@@ -182,7 +181,6 @@ private:
   void BuildPolyPath(vec3 const& startPos, vec3 const& endPos);
   void BuildPointPath(float const* startPoint, float const* endPoint);
   void BuildShortcut();
-  // void BuildUnderwaterPath();
 
   // smooth path functions
   uint32_t fixupCorridor(dtPolyRef* path,

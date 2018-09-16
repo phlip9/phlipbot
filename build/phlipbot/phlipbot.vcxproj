@@ -173,6 +173,7 @@
     <ClCompile Include="..\..\phlipbot\doctest_runner.cpp" />
     <ClCompile Include="..\..\phlipbot\navigation\MoveMap.cpp" />
     <ClCompile Include="..\..\phlipbot\navigation\PathFinder.cpp" />
+    <ClCompile Include="..\..\phlipbot\navigation\PlayerNavigator.cpp" />
     <ClCompile Include="..\..\phlipbot\PID.cpp" />
     <ClCompile Include="..\..\phlipbot\PlayerController.cpp" />
   </ItemGroup>
@@ -197,6 +198,7 @@
     <ClInclude Include="..\..\phlipbot\navigation\MoveMap.hpp" />
     <ClInclude Include="..\..\phlipbot\navigation\MoveMapSharedDefines.hpp" />
     <ClInclude Include="..\..\phlipbot\navigation\PathFinder.hpp" />
+    <ClInclude Include="..\..\phlipbot\navigation\PlayerNavigator.hpp" />
     <ClInclude Include="..\..\phlipbot\PID.hpp" />
     <ClInclude Include="..\..\phlipbot\PlayerController.hpp" />
   </ItemGroup>

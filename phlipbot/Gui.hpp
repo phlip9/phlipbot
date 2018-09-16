@@ -6,6 +6,7 @@
 
 #include "ObjectManager.hpp"
 #include "PlayerController.hpp"
+#include "navigation/PlayerNavigator.hpp"
 #include "wow_constants.hpp"
 
 namespace phlipbot
@@ -17,7 +18,9 @@ void ToggleGuiIsVisible();
 
 struct Gui final {
 public:
-  explicit Gui(ObjectManager& objmgr, PlayerController& pc) noexcept;
+  explicit Gui(ObjectManager& objmgr,
+               PlayerController& pc,
+               PlayerNavigator& pn) noexcept;
   ~Gui() = default;
   Gui(const Gui&) = delete;
   Gui& operator=(const Gui&) = delete;
@@ -27,16 +30,13 @@ public:
   void Reset();
   void Shutdown();
 
-  enum class FacingType : int
-  {
-    Direction,
-    Position,
-    Object
-  };
-
-  bool is_initialized{false};
+  enum class FacingType : int { Direction, Position, Object };
 
   ObjectManager& objmgr;
+  PlayerController& player_controller;
+  PlayerNavigator& player_nav;
+
+  bool is_initialized{false};
 
   float ctm_precision{2.0f};
   bool ctm_toggle{false};
@@ -49,7 +49,9 @@ public:
   Guid facing_guid{};
 
   bool player_controller_enabled{false};
-  PlayerController& player_controller;
+
+  vec3 nav_destination{};
+  bool player_nav_enabled{false};
 
   uint32_t input_flags{0};
   bool control_toggle{false};
