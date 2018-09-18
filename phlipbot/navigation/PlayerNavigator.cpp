@@ -6,6 +6,8 @@
 
 #include <hadesmem/detail/trace.hpp>
 
+using boost::none;
+
 using glm::length;
 
 // TODO(phlip9): eventually update a pre-existing path if the destination
@@ -20,7 +22,7 @@ namespace phlipbot
 void PlayerNavigator::SetDestination(vec3 const dest)
 {
   update_path = true;
-  path_info = std::nullopt;
+  path_info = none;
   path_idx = 0;
   destination = dest;
 }

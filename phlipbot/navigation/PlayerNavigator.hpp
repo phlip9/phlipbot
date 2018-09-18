@@ -1,7 +1,8 @@
 #pragma once
 
-#include <optional>
 #include <memory>
+
+#include <boost/optional.hpp>
 
 #include "../PlayerController.hpp"
 #include "MoveMap.hpp"
@@ -31,7 +32,7 @@ struct PlayerNavigator {
   bool enabled{false};
   bool update_path{false};
 
-  std::optional<PathFinder> path_info;
+  boost::optional<PathFinder> path_info;
   size_t path_idx{0};
   vec3 destination{0, 0, 0};
 };

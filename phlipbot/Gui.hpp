@@ -26,7 +26,9 @@ public:
   Gui& operator=(const Gui&) = delete;
 
   void Init(HWND const hwnd, IDirect3DDevice9* device);
-  void Render();
+  void SetRenderState(IDirect3DDevice9* device, D3DVIEWPORT9 const& vp);
+  void Render(IDirect3DDevice9* device, D3DVIEWPORT9 const& vp);
+  void RenderImGui();
   void Reset();
   void Shutdown();
 

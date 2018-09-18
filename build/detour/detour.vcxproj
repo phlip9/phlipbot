@@ -19,6 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\deps\recastnavigation\DebugUtils\Include\DebugDraw.h" />
+    <ClInclude Include="..\..\deps\recastnavigation\DebugUtils\Include\DetourDebugDraw.h" />
+    <ClInclude Include="..\..\deps\recastnavigation\DetourTileCache\Include\DetourTileCache.h" />
+    <ClInclude Include="..\..\deps\recastnavigation\DetourTileCache\Include\DetourTileCacheBuilder.h" />
     <ClInclude Include="..\..\deps\recastnavigation\Detour\Include\DetourAlloc.h" />
     <ClInclude Include="..\..\deps\recastnavigation\Detour\Include\DetourAssert.h" />
     <ClInclude Include="..\..\deps\recastnavigation\Detour\Include\DetourCommon.h" />
@@ -30,6 +34,10 @@
     <ClInclude Include="..\..\deps\recastnavigation\Detour\Include\DetourStatus.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\deps\recastnavigation\DebugUtils\Source\DebugDraw.cpp" />
+    <ClCompile Include="..\..\deps\recastnavigation\DebugUtils\Source\DetourDebugDraw.cpp" />
+    <ClCompile Include="..\..\deps\recastnavigation\DetourTileCache\Source\DetourTileCache.cpp" />
+    <ClCompile Include="..\..\deps\recastnavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp" />
     <ClCompile Include="..\..\deps\recastnavigation\Detour\Source\DetourAlloc.cpp" />
     <ClCompile Include="..\..\deps\recastnavigation\Detour\Source\DetourAssert.cpp" />
     <ClCompile Include="..\..\deps\recastnavigation\Detour\Source\DetourCommon.cpp" />
@@ -112,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DT_POLYREF64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\deps\recastnavigation\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\deps\recastnavigation\Detour\Include;..\..\deps\recastnavigation\DetourTileCache\Include;..\..\deps\recastnavigation\DebugUtils\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>

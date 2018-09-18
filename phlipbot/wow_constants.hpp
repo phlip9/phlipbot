@@ -3,8 +3,9 @@
 #include <stdint.h>
 
 #pragma warning(push)
-#pragma warning(disable : 4201) // allow anonymous unions
-#define GLM_FORCE_SWIZZLE
+#pragma warning(disable : 4201) // allow anonymous unions for swizzling
+#include <glm/ext/matrix_float3x3.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -24,20 +25,99 @@ using vec4 = glm::vec4;
 using vec2i = glm::ivec2;
 using vec3i = glm::ivec3;
 
+// Note: glm matrices are stored in __column-major__ order
+using mat3x3 = glm::mat3x3;
+using mat4x4 = glm::mat4x4;
+
 struct BoundingBox {
   vec3 p1;
   vec3 p2;
 };
 
+#pragma pack(push, 1)
+struct CGCamera
+{
+  struct CGCameraVMT
+  {
+    float (CGCamera::*GetFov)();
+    vec3* (CGCamera::*Forward)(vec3* result);
+    vec3* (CGCamera::*Right)(vec3* result);
+    vec3* (CGCamera::*Up)(vec3* result);
+  };
+
+  struct CGCameraView
+  {
+    float dist;
+    float pitch;
+    float yaw;
+  };
+
+  CGCameraVMT* vmt;               // 0x0000
+	uint32_t __unk2;                // 0x0004
+	vec3 position;                  // 0x0008
+	mat3x3 facing;                  // 0x0014
+	float near_clip;                // 0x0038
+	float far_clip;                 // 0x003C
+	float fov;                      // 0x0040
+	float aspect_ratio;             // 0x0044
+	uint32_t __unk3;                // 0x0048
+	void* model;                    // 0x004C
+	uint32_t __unk4;                // 0x0050
+	mat3x3 __unk5;                  // 0x0054
+	uint8_t pad_0078[16];           // 0x0078
+	uint64_t relative_to_guid;      // 0x0088
+	uint32_t flags1;                // 0x0090
+	uint8_t pad_0094[16];           // 0x0094
+	uint32_t flags2;                // 0x00A4
+	uint32_t flags3;                // 0x00A8
+	uint32_t flags4;                // 0x00AC
+	uint8_t pad_00B0[12];           // 0x00B0
+	CGCameraView views[4];          // 0x00BC
+	float distance;                 // 0x00EC
+	float yaw;                      // 0x00F0
+	float pitch;                    // 0x00F4
+	float roll;                     // 0x00F8
+	uint8_t pad_00FC[44];           // 0x00FC
+	uint32_t motion_mask;           // 0x0128
+	int32_t motion_start[6];        // 0x012C
+	int32_t motion_stop[6];         // 0x0144
+	int32_t motion_timeout[6];      // 0x015C
+	vec3 last_target;               // 0x0174
+	float saved_target_z;           // 0x0180
+	float last_facing;              // 0x0184
+	float last_delta_z;             // 0x0188
+	float smoothing_angle;          // 0x018C
+	float zoom_smoothing_timestamp; // 0x0190
+	float zoom_time;                // 0x0194
+	float desired_distance;         // 0x0198
+	float previous_distance;        // 0x019C
+	uint8_t pad_01A0[200];          // 0x01A0
+};                                // Size: 0x0268
+#pragma pack(pop)
+
+static_assert(sizeof(CGCamera) == 0x268);
+
+#pragma pack(push, 1)
+struct CGWorldFrame
+{
+	uint8_t pad_0000[26040];   // 0x0000
+	CGCamera* camera;          // 0x65B8
+	uint32_t update_timestamp; // 0x65BC
+};                           // Size: 0x65C0
+#pragma pack(pop)
+
 // TODO(phlip9): generic TSLink<T>
+#pragma pack(push, 1)
 struct TSLink {
   TSLink* prev_link;
   void* next_ptr;
 };
+#pragma pack(pop)
 
 struct CMoveSpline {
 };
 
+#pragma pack(push, 1)
 struct CMovementData {
   TSLink move_link;        // 0x00
   TSLink transport_link;   // 0x08
@@ -69,20 +149,23 @@ struct CMovementData {
   float __unk4;            // 0xA0
   CMoveSpline* spline;     // 0xA4
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 struct LoginData {
   char account[64];
   uint32_t login_server_id;
   char session_key[40];
 };
+#pragma pack(pop)
 
 struct WowConnection {
 };
 
-struct CDataStoreVMT {
-};
-
+#pragma pack(push, 1)
 struct CDataStore {
+  struct CDataStoreVMT {};
+
   CDataStoreVMT* vmt;
   void* data;
   uint32_t base;
@@ -90,11 +173,12 @@ struct CDataStore {
   uint32_t bytes_written;
   uint32_t bytes_read;
 };
+#pragma pack(pop)
 
-struct NetClientVMT {
-};
-
+#pragma pack(push, 1)
 struct NetClient {
+  struct NetClientVMT {};
+
   NetClientVMT* vmt;
   LoginData login_data;
   uint32_t net_state;
@@ -116,6 +200,7 @@ struct NetClient {
   uint32_t bytes_recv;
   uint32_t connected_timestamp;
 };
+#pragma pack(pop)
 
 enum class ErrorCodes : int32_t {
   CastOutOfRange       = 0x131,
@@ -317,6 +402,7 @@ namespace Data
 {
 uintptr_t const
   ClntObjMgr           = 0x00B41414,
+  CGWorldFrame         = 0x00B4B2BC,
   GameVersion          = 0x00837C04,
   MapId                = 0x0084C498,
   AntiDc               = 0x00B41D98,

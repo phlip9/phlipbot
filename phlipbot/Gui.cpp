@@ -9,9 +9,16 @@
 
 #include <boost/math/constants/constants.hpp>
 
+#include <hadesmem/detail/smart_handle.hpp>
 #include <hadesmem/detail/trace.hpp>
+#include <hadesmem/error.hpp>
 
 using boost::math::float_constants::two_pi;
+
+using hadesmem::detail::SmartComHandle;
+
+using hadesmem::ErrorCodeWinHr;
+using hadesmem::ErrorString;
 
 namespace phlipbot
 {
@@ -50,12 +57,85 @@ void Gui::Init(HWND const hwnd, IDirect3DDevice9* device)
   is_initialized = true;
 }
 
-void Gui::Render()
+void Gui::SetRenderState(IDirect3DDevice9* device, D3DVIEWPORT9 const& vp)
+{
+  device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+  device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+  device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+  device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+  device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+  device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+  device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+  device->SetRenderState(D3DRS_CLIPPLANEENABLE, 0);
+  device->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
+  device->SetRenderState(D3DRS_LASTPIXEL, TRUE);
+  device->SetRenderState(D3DRS_FOGENABLE, FALSE);
+  device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+  device->SetRenderState(D3DRS_COLORWRITEENABLE, 0x0000000F);
+  device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+  device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
+  device->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, FALSE);
+
+  device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+  device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+  device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_CURRENT);
+  device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+  device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+  device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_CURRENT);
+  device->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU);
+  device->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS,
+                               D3DTTFF_DISABLE);
+
+  device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+  device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+  device->SetSamplerState(0, D3DSAMP_ADDRESSW, D3DTADDRESS_WRAP);
+  device->SetSamplerState(0, D3DSAMP_BORDERCOLOR, 0);
+  device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+  device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+  device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+  device->SetSamplerState(0, D3DSAMP_MIPMAPLODBIAS, 0);
+  device->SetSamplerState(0, D3DSAMP_MAXMIPLEVEL, 0);
+  device->SetSamplerState(0, D3DSAMP_MAXANISOTROPY, 1);
+  device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, 0);
+  device->SetSamplerState(0, D3DSAMP_ELEMENTINDEX, 0);
+  device->SetSamplerState(0, D3DSAMP_DMAPOFFSET, 0);
+
+  device->SetVertexShader(nullptr);
+  device->SetPixelShader(nullptr);
+
+  device->SetViewport(&vp);
+}
+
+void Gui::Render(IDirect3DDevice9* device, D3DVIEWPORT9 const& vp)
 {
   HADESMEM_DETAIL_ASSERT(is_initialized);
 
   if (!GetGuiIsVisible()) return;
 
+  // Save the current device state so we can restore it after our we render
+  IDirect3DStateBlock9* state_block = nullptr;
+  auto const create_sb_hr = device->CreateStateBlock(D3DSBT_ALL, &state_block);
+  if (FAILED(create_sb_hr)) {
+    HADESMEM_DETAIL_THROW_EXCEPTION(
+      hadesmem::Error{} << ErrorString{"device->CreateStateBlock failed"}
+                        << ErrorCodeWinHr{create_sb_hr});
+  }
+  SmartComHandle state_block_cleanup{state_block};
+
+  SetRenderState(device, vp);
+  RenderImGui();
+
+  // Restore the original device state
+  auto const apply_sb_hr = state_block->Apply();
+  if (FAILED(apply_sb_hr)) {
+    HADESMEM_DETAIL_THROW_EXCEPTION(hadesmem::Error{}
+                                    << ErrorString{"state_block->Apply failed"}
+                                    << ErrorCodeWinHr{apply_sb_hr});
+  }
+}
+
+void Gui::RenderImGui()
+{
   ImGui_ImplDX9_NewFrame();
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();

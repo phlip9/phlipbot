@@ -42,6 +42,18 @@
     <ClInclude Include="..\..\deps\recastnavigation\Detour\Include\DetourStatus.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\deps\recastnavigation\DebugUtils\Include\DebugDraw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\recastnavigation\DebugUtils\Include\DetourDebugDraw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\recastnavigation\DetourTileCache\Include\DetourTileCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\recastnavigation\DetourTileCache\Include\DetourTileCacheBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\deps\recastnavigation\Detour\Source\DetourAlloc.cpp">
@@ -63,6 +75,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\deps\recastnavigation\Detour\Source\DetourNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\recastnavigation\DebugUtils\Source\DebugDraw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\recastnavigation\DebugUtils\Source\DetourDebugDraw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\recastnavigation\DetourTileCache\Source\DetourTileCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\recastnavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
