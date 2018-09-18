@@ -176,6 +176,7 @@
     <ClCompile Include="..\..\phlipbot\navigation\PlayerNavigator.cpp" />
     <ClCompile Include="..\..\phlipbot\PID.cpp" />
     <ClCompile Include="..\..\phlipbot\PlayerController.cpp" />
+    <ClCompile Include="..\..\phlipbot\WorldRender.cpp" />
     <ClCompile Include="..\..\phlipbot\WowCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -202,6 +203,7 @@
     <ClInclude Include="..\..\phlipbot\navigation\PlayerNavigator.hpp" />
     <ClInclude Include="..\..\phlipbot\PID.hpp" />
     <ClInclude Include="..\..\phlipbot\PlayerController.hpp" />
+    <ClInclude Include="..\..\phlipbot\WorldRender.hpp" />
     <ClInclude Include="..\..\phlipbot\WowCamera.hpp" />
   </ItemGroup>
   <ItemGroup>
